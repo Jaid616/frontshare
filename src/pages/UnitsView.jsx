@@ -367,9 +367,12 @@ const UnitsView = () => {
               type="text"
               name="name"
               value={newUnitData.name}
-              onChange={(e) =>
-                setNewUnitData({ ...newUnitData, name: e.target.value })
-              }
+              onChange={(e) => setNewUnitData((prev) => ({ ...prev, name: e.target.value }))}
+              // value={newUnitData.name}
+              // onChange={(e) =>
+              //   // setNewUnitData({ ...newUnitData, name: e.target.value })
+              //   setNewUnitData((pre)=> ({...pre , name : e.target.value}))
+              // }
               className="w-full border rounded-md p-2 text-sm"
               placeholder="Enter unit name"
             />
@@ -439,7 +442,7 @@ const UnitsView = () => {
             </div>
           </div>
 
-          <div className="max-h-[375px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300">
+          <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300">
             {units.map((unit, index) => (
               <div
                 key={index}

@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+@layer base {
+  input ,  select {
+    @apply h-9 ;
+  }
+}
+
 body {
   font-family: "Red Hat Display", serif;
 }

@@ -40,6 +40,7 @@ const AddExpenses = () => {
   const [expenses, setExpenses] = useState([]);
   const [expenseItems, setExpenseItems] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
+  const [isLoading , setLoading ] = useState(true)
 
   useEffect(() => {
     const fetchPhone = async () => {

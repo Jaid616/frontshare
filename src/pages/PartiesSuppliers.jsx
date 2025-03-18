@@ -61,10 +61,11 @@ const PartiesSuppliers = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [parties, setParties] = useState([]);
-  const [menuOpen, setMenuOpen] = useState(null);
+ 
   const [isEdit, setIsEdit] = useState(false);
   const [currentParty, setCurrentParty] = useState(null);
   const [bills, setBills] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(null);
   const toggleMenu = (index) => {
     setMenuOpen(menuOpen === index ? null : index);
   };

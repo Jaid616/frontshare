@@ -90,8 +90,8 @@ const AddItems = ({
   }, [
     primaryUnits,
     secondaryUnits,
-    updatedPrimaryUnits,
-    updatedSecondaryUnits,
+    // updatedPrimaryUnits,
+    // updatedSecondaryUnits,
   ]);
 
   const [phone, setPhone] = useState();
@@ -120,8 +120,18 @@ const AddItems = ({
         const existingDoc = await db.get(phone);
         console.log(existingDoc.categories, "These are the Categories");
         setCategories(existingDoc.categories);
+        // console.log(existingDoc.units ,"units")
+        const updatedPrimary = [
+          ...new Set([...updatedPrimaryUnits, ...existingDoc?.units?.primaryUnit ||[]]),
+        ];
+        const updatedSecondary = [
+          ...new Set([...updatedSecondaryUnits, ...existingDoc?.units?.secondaryUnit ||[]]),
+        ];
+        setUpdatedPrimaryUnits(updatedPrimary);
+        setUpdatedSecondaryUnits(updatedSecondary);
       }
     };
+    
     fetchCategories();
   }, [phone]);
 
@@ -244,12 +254,44 @@ const AddItems = ({
     }
   }, [isEdit, showItem]);
 
+  const [errors, setErrors] = useState({});
+
+  // const handleInputChange = (field, value) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [field]: value,
+  //   }));
+  // };
   const handleInputChange = (field, value) => {
+    let newValue = value;
+  
+    if (["salePrice", "wholesalePrice", "saleDiscount", "purchasePrice", "atPrice"].includes(field)) {
+      newValue = value.replace(/[^0-9.]/g, ""); // Allow only numbers and a single decimal point
+  
+      // Prevent multiple decimal points
+      const dotCount = (newValue.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        newValue = newValue.slice(0, newValue.lastIndexOf(".")); // Remove extra dots
+      }
+    } else if (["openingPrimaryQuantity", "openingSecondaryQuantity", "minWholesaleQty" ,"minStockToMaintain"].includes(field)) {
+      newValue = value.replace(/\D/g, ""); // Allow only whole numbers (no decimals)
+    }
+  
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: newValue,
     }));
+  
+    // Clear only the error of the currently edited field
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
   };
+  
+  
 
   useEffect(() => {
     const fetchCountry = async () => {
@@ -298,7 +340,7 @@ const AddItems = ({
       }
 
       const itemExists = existingDoc.items.some(
-        (item) => item.itemName === itemName
+        (item) => item.itemName.toLowerCase() === itemName.toLowerCase()
       );
 
       setIsUnique(!itemExists);
@@ -572,10 +614,10 @@ const AddItems = ({
             )}
           </div>
 
-          <button className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 flex items-center gap-2">
+          {/* <button className="px-4 py-2 border mt-3 border-gray-300 rounded text-sm hover:bg-gray-50 flex items-center gap-2">
             <Camera size={16} />
             Add Item Image
-          </button>
+          </button> */}
         </div>
 
         <div className="flex gap-4">
@@ -638,79 +680,85 @@ const AddItems = ({
 
         {tab === 0 && (
           <div className="flex flex-col gap-4">
-            <div className="flex gap-[24px]">
-              <div className="flex gap-4 w-[525px]">
-                <input
-                  className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Sale Price"
-                  value={formData.salePrice}
-                  onChange={(e) =>
-                    handleInputChange("salePrice", e.target.value)
-                  }
-                />
-                <select
-                  className="px-3 py-2 w-[170px] border rounded text-sm focus:outline-none focus:border-blue-500"
-                  value={formData.salePriceType}
-                  onChange={(e) =>
-                    handleInputChange("salePriceType", e.target.value)
-                  }
-                >
-                  <option value="Without Tax">Without Tax</option>
-                  <option value="With Tax">With Tax</option>
-                </select>
-              </div>
-              <div className="flex gap-4 w-[525px]">
-                <input
-                  className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Wholesale Price"
-                  value={formData.wholesalePrice}
-                  onChange={(e) =>
-                    handleInputChange("wholesalePrice", e.target.value)
-                  }
-                />
-                <select
-                  className="px-3 w-[170px] py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                  value={formData.wholesalePriceType}
-                  onChange={(e) =>
-                    handleInputChange("wholesalePriceType", e.target.value)
-                  }
-                >
-                  <option value="Without Tax">Without Tax</option>
-                  <option value="With Tax">With Tax</option>
-                </select>
-              </div>
-            </div>
+            <div className="flex gap-6">
+  {/* Sale Price Section */}
+  <div className="flex flex-col w-1/2">
+    <label className="text-sm font-semibold mb-1">Sale Price</label>
+    <div className="flex gap-4">
+      <input
+        className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+        placeholder="Sale Price"
+        value={formData.salePrice}
+        onChange={(e) => handleInputChange("salePrice", e.target.value)}
+      />
+      <select
+        className="px-3 py-2 w-[170px] border rounded text-sm focus:outline-none focus:border-blue-500"
+        value={formData.salePriceType}
+        onChange={(e) => handleInputChange("salePriceType", e.target.value)}
+      >
+        <option value="Without Tax">Without Tax</option>
+        <option value="With Tax">With Tax</option>
+      </select>
+    </div>
+  </div>
 
-            <div className="flex gap-[24px]">
-              <div className="flex gap-4 w-[525px]">
-                <input
-                  className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Discount On Sale Price"
-                  value={formData.saleDiscount}
-                  onChange={(e) =>
-                    handleInputChange("saleDiscount", e.target.value)
-                  }
-                />
-                <select
-                  className="px-3 w-[170px] py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                  value={formData.saleDiscountType}
-                  onChange={(e) =>
-                    handleInputChange("saleDiscountType", e.target.value)
-                  }
-                >
-                  <option value="Percentage">Percentage</option>
-                  <option value="Amount">Amount</option>
-                </select>
-              </div>
-              <input
-                className="px-3 py-2 w-[525px] border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Minimum Wholesale Quantity"
-                value={formData.minWholesaleQty}
-                onChange={(e) =>
-                  handleInputChange("minWholesaleQty", e.target.value)
-                }
-              />
-            </div>
+  {/* Wholesale Price Section */}
+  <div className="flex flex-col w-1/2">
+    <label className="text-sm font-semibold mb-1">Wholesale Price</label>
+    <div className="flex gap-4">
+      <input
+        className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+        placeholder="Wholesale Price"
+        value={formData.wholesalePrice}
+        onChange={(e) => handleInputChange("wholesalePrice", e.target.value)}
+      />
+      <select
+        className="px-3 w-[170px] py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+        value={formData.wholesalePriceType}
+        onChange={(e) => handleInputChange("wholesalePriceType", e.target.value)}
+      >
+        <option value="Without Tax">Without Tax</option>
+        <option value="With Tax">With Tax</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+
+            <div className="flex gap-6">
+  {/* Discount On Sale Price */}
+  <div className="flex flex-col w-1/2">
+    <label className="text-sm font-semibold mb-1">Discount On Sale Price</label>
+    <div className="flex gap-4">
+      <input
+        className="px-3 w-full py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+        placeholder="Discount On Sale Price"
+        value={formData.saleDiscount}
+        onChange={(e) => handleInputChange("saleDiscount", e.target.value)}
+      />
+      <select
+        className="px-3 w-[170px] py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+        value={formData.saleDiscountType}
+        onChange={(e) => handleInputChange("saleDiscountType", e.target.value)}
+      >
+        <option value="Percentage">Percentage</option>
+        <option value="Amount">Amount</option>
+      </select>
+    </div>
+  </div>
+
+  {/* Minimum Wholesale Quantity */}
+  <div className="flex flex-col w-1/2">
+    <label className="text-sm font-semibold mb-1">Minimum Wholesale Quantity</label>
+    <input
+      className="px-3 py-2 w-full border rounded text-sm focus:outline-none focus:border-blue-500"
+      placeholder="Minimum Wholesale Quantity"
+      value={formData.minWholesaleQty}
+      onChange={(e) => handleInputChange("minWholesaleQty", e.target.value)}
+    />
+  </div>
+</div>
+
             <div className="flex gap-4">
               <div className="flex-1">
                 <h6 className="text-sm font-semibold mb-2">Purchase Price</h6>
@@ -742,8 +790,8 @@ const AddItems = ({
                 >
                   <option value="">Select Tax Rate</option>
                   {taxRates.map((tax, index) => (
-                    <option key={index} value={`${tax.name} ${tax.rate}%`}>
-                      {tax.name} {tax.rate}%
+                    <option key={index} value={`${tax.name} ${tax.rate}`}>
+                      {tax.name} {tax.rate}
                     </option>
                   ))}
                   <option value="Exempt">Exempt</option>
@@ -754,58 +802,85 @@ const AddItems = ({
         )}
 
         {tab === 1 && (
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              <input
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Opening Primary Quantity"
-                value={formData.openingPrimaryQuantity}
-                onChange={(e) =>
-                  handleInputChange("openingPrimaryQuantity", e.target.value)
-                }
-              />
-              <input
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Opening Secondary Quantity"
-                value={formData.openingSecondaryQuantity}
-                onChange={(e) =>
-                  handleInputChange("openingSecondaryQuantity", e.target.value)
-                }
-              />
-              <input
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="At Price"
-                value={formData.atPrice}
-                onChange={(e) => handleInputChange("atPrice", e.target.value)}
-              />
-              <input
-                type="date"
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                value={formData.asOfDate}
-                onChange={(e) => handleInputChange("asOfDate", e.target.value)}
-              />
-            </div>
-            <div className="flex gap-4">
-              <input
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Min Stock To Maintain"
-                value={formData.minStockToMaintain}
-                onChange={(e) =>
-                  handleInputChange("minStockToMaintain", e.target.value)
-                }
-              />
-              <input
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Location"
-                value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
-              />
-            </div>
+      <div className="flex flex-col gap-4">
+      {/* First Row */}
+      <div className="flex flex-col gap-1">
+        {/* <label className="text-sm font-semibold">Opening Quantities & Price</label> */}
+        <div className="flex gap-4">
+          <div className="flex flex-col w-1/4">
+            <label className="text-sm font-semibold mb-1">Opening Primary Quantity</label>
+            <input
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              placeholder="Opening Primary Quantity"
+              value={formData.openingPrimaryQuantity}
+              onChange={(e) => handleInputChange("openingPrimaryQuantity", e.target.value)}
+            />
           </div>
+    
+          <div className="flex flex-col w-1/4">
+            <label className="text-sm font-semibold mb-1">Opening Secondary Quantity</label>
+            <input
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              placeholder="Opening Secondary Quantity"
+              value={formData.openingSecondaryQuantity}
+              onChange={(e) => handleInputChange("openingSecondaryQuantity", e.target.value)}
+            />
+          </div>
+    
+          <div className="flex flex-col w-1/4">
+            <label className="text-sm font-semibold mb-1">At Price</label>
+            <input
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              placeholder="At Price"
+              value={formData.atPrice}
+              onChange={(e) => handleInputChange("atPrice", e.target.value)}
+            />
+          </div>
+    
+          <div className="flex flex-col w-1/4">
+            <label className="text-sm font-semibold mb-1">As Of Date</label>
+            <input
+              type="date"
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              value={formData.asOfDate}
+              onChange={(e) => handleInputChange("asOfDate", e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    
+      {/* Second Row */}
+      <div className="flex flex-col gap-1">
+        {/* <label className="text-sm font-semibold">Stock & Location Details</label> */}
+        <div className="flex gap-4">
+          <div className="flex flex-col w-1/2">
+            <label className="text-sm font-semibold mb-1">Min Stock To Maintain</label>
+            <input
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              placeholder="Min Stock To Maintain"
+              value={formData.minStockToMaintain}
+              onChange={(e) => handleInputChange("minStockToMaintain", e.target.value)}
+            />
+          </div>
+    
+          <div className="flex flex-col w-1/2">
+            <label className="text-sm font-semibold mb-1">Location</label>
+            <input
+              className="px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500"
+              placeholder="Location"
+              value={formData.location}
+              onChange={(e) => handleInputChange("location", e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      
         )}
       </div>
 
-      <div className="flex justify-end gap-2 mt-4 fixed bottom-[11px] w-[80%]">
+      <div className="flex justify-end gap-2 mt-4 fixed bottom-[11px] w-[78%]">
         <button
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
           onClick={handleSaveAndNew}
@@ -813,7 +888,7 @@ const AddItems = ({
           Save & New
         </button>
         <button
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+          className="px-4 py-2 disabled:bg-blue-200 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
           onClick={handleSave}
           disabled={!isUnique}
         >

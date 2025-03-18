@@ -7,7 +7,7 @@ import db from "../config/dbConfig.js";
 
 const PaymentOut = () => {
   const [dateRange, setDateRange] = React.useState("this-month");
-  const { allTransactionSettings, setAllTransactionSettings } = useState();
+  const [ allTransactionSettings, setAllTransactionSettings ] = useState();
   const [startDate, setStartDate] = React.useState("2025-01-01");
   const [endDate, setEndDate] = React.useState("2025-01-31");
   const [selectedFirm, setSelectedFirm] = React.useState("ALL FIRMS");
@@ -19,6 +19,7 @@ const PaymentOut = () => {
   const [parties, setParties] = useState([]);
   const [paymentIn, setPaymentIn] = useState([]);
   const [paymentOut, setPaymentOut] = useState([]);
+  const [isLoading , setLoading ] = useState(true)
   const [addPartyNew, setAddPartyNew] = React.useState(false);
   const [selectedParty, setSelectedParty] = React.useState("");
   const [phone, setPhone] = useState(null);

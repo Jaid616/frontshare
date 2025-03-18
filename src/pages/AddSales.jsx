@@ -115,6 +115,7 @@ export default function AddSales() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState();
   const [newCategory, setNewCategory] = useState();
+  const [searchKey , setSearchkey] = useState('')
   // const [taxRates, setTaxRates] = useState([]);
   const [allPrinterSettings, setAllPrinterSettings] = useState({});
   const [billParty, setBillParty] = useState(null);
@@ -892,6 +893,7 @@ export default function AddSales() {
   };
 
   const handleItemSelect = (tabIndex, rowId, currentItem) => {
+    console.log(currentItem , "cu")
     const updatedTabs = [...tabs];
     const itemIndex = updatedTabs[tabIndex].form.items.findIndex(
       (item) => item.id === rowId
@@ -906,11 +908,19 @@ export default function AddSales() {
         discountAmount = currentItem.saleDiscount;
       }
 
+      // const updatedDiscount = {
+      //   percentage:
+      //     currentItem.saleDiscountType === "Percentage"
+      //       ? currentItem.saleDiscount
+      //       : updatedTabs[tabIndex].form.items[itemIndex].discount.percentage,
+      //   amount: discountAmount,
+      // };
+
       const updatedDiscount = {
         percentage:
           currentItem.saleDiscountType === "Percentage"
             ? currentItem.saleDiscount
-            : updatedTabs[tabIndex].form.items[itemIndex].discount.percentage,
+            : '',
         amount: discountAmount,
       };
 
@@ -924,8 +934,8 @@ export default function AddSales() {
         amount: taxAmount,
       };
       console.log(
-        currentItem.price - discountAmount,
-        currentItem.price,
+        currentItem.salePrice - discountAmount,
+        currentItem.salePrice,
         discountAmount,
         "This is the updated discount"
       );
@@ -961,18 +971,17 @@ export default function AddSales() {
         price: currentItem.salePrice,
         itemId: currentItem.itemCode,
         primaryUnit: currentItem.quantity.primary,
-        secondaryUnit: currentItem.quantity.secondary,
+        // secondaryUnit: currentItem.quantity.secondary,
         quantity: {
           primary: 1,
-          secondary: 1,
+          // secondary: 1,
         },
         discount: updatedDiscount,
         // tax: updatedTax,
         amount:
           currentItem.salePrice -
           discountAmount +
-          taxAmount +
-          updatedSecondaryUnitPrice,
+          taxAmount
       };
     }
     setSelectedItem(currentItem);
@@ -1136,7 +1145,7 @@ export default function AddSales() {
 
     return result.trim() + " rupees";
   };
-
+ 
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [filteredParties, setFilteredParties] = useState(parties);
@@ -1458,6 +1467,7 @@ export default function AddSales() {
       prevTabs.map((tab) => {
         const newItems = tab.form.items.map((item) => {
           if (item.id === itemId) {
+            console.log(item , "item")
             let updatedItem;
             let extractedTaxPercentage = null;
 
@@ -1502,8 +1512,7 @@ export default function AddSales() {
             if (
               field === "quantity" ||
               field === "price" ||
-              field === "primaryUnit" ||
-              field === "secondaryUnit"
+              field === "primaryUnit" 
             ) {
               // Recalculate totals for quantity, price, and unit changes
               const totals = calculateItemTotals(updatedItem, conversions);
@@ -1524,6 +1533,7 @@ export default function AddSales() {
             }
 
             return updatedItem;
+            console.log(updatedItem , "afterupate")
           }
           return item;
         });
@@ -1563,7 +1573,7 @@ export default function AddSales() {
         : !isNaN(parseFloat(value))
         ? parseFloat(value)
         : ""; // Convert to number if possible
-
+    
     handleItemChange(itemId, field, numericValue, subfield);
   };
 
@@ -1571,7 +1581,7 @@ export default function AddSales() {
   const calculateItemTotals = (item, conversions) => {
     // Extract numeric values with defaults
     const primaryQuantity = parseFloat(item.quantity?.primary || 0);
-    const secondaryQuantity = parseFloat(item.quantity?.secondary || 0);
+    // const secondaryQuantity = parseFloat(item.quantity?.secondary || 0);
     const price = parseFloat(item.price || 0);
     const discountPercentage = parseFloat(item.discount?.percentage || 0);
 
@@ -1586,8 +1596,7 @@ export default function AddSales() {
     // Find the conversion rate for secondary unit
     const conversion = conversions?.find(
       (conv) =>
-        conv.primaryUnit === item.primaryUnit &&
-        conv.secondaryUnit === item.secondaryUnit
+        conv.primaryUnit === item.primaryUnit 
     );
 
     const conversionRate = conversion
@@ -1599,10 +1608,11 @@ export default function AddSales() {
 
     // Calculate base amount including both primary and secondary quantities
     const primaryAmount = primaryQuantity * price;
-    const secondaryAmount = secondaryQuantity * oneSecondaryUnitPrice;
+    // const secondaryAmount = secondaryQuantity * oneSecondaryUnitPrice;
 
     // Add primary and secondary amounts for the base amount
-    const baseAmount = primaryAmount + secondaryAmount;
+    const baseAmount = primaryAmount
+    //  + secondaryAmount;
 
     // Calculate discount amount
     const discountAmount = (baseAmount * discountPercentage) / 100;
@@ -1623,7 +1633,7 @@ export default function AddSales() {
       taxAmount,
       finalAmount,
       primaryAmount,
-      secondaryAmount,
+      // secondaryAmount,
     };
   };
 
@@ -1825,6 +1835,18 @@ export default function AddSales() {
     recalculateAllItems();
   }, []);
 
+
+  const [searchKeyword, setSearchKeyword] = useState("");
+
+// Function to handle search input changes
+const handleSearchChange = (event) => {
+  setSearchKeyword(event.target.value);
+};
+
+// Filter items based on searchKeyword
+const filteredItems = items?.filter((item) =>
+  item.itemName.toLowerCase().includes(searchKeyword.toLowerCase())
+);
   return (
     <>
       {selectedTheme ? (
@@ -2409,7 +2431,7 @@ export default function AddSales() {
                             {/* Quantity columns */}
                             <th
                               className="p-2 text-xs text-center text-white bg-blue-500 border border-blue-600"
-                              colSpan={4}
+                              colSpan={2}
                             >
                               QTY
                             </th>
@@ -2454,17 +2476,17 @@ export default function AddSales() {
                               <th className="border-b" />
                             ))}
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
-                              Base
+                              Base (QTY)
                             </th>
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Unit
                             </th>
-                            <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
+                            {/* <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Secondary
                             </th>
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Unit
-                            </th>
+                            </th> */}
                             {allTransactionSettings?.itemsTable
                               ?.freeItemQuantity && (
                               <th className="border bg-blue-500" />
@@ -2497,14 +2519,18 @@ export default function AddSales() {
                                 <div className="flex flex-col">
                                   <input
                                     type="text"
-                                    value={item.itemName}
-                                    onChange={(e) =>
-                                      handleNumericInputChange(
-                                        item.id,
-                                        "itemName",
-                                        e.target.value
-                                      )
-                                    }
+                                    value={item.itemName || searchKeyword}
+                                    // onChange={(e) =>
+                                    //   handleNumericInputChange(
+                                    //     item.id,
+                                    //     "itemName",
+                                    //     e.target.value
+                                    //   )
+                                    // }
+                                    onChange={(e) => {
+                                      handleNumericInputChange(item.id, "itemName", e.target.value);
+                                      setSearchKeyword(e.target.value); // Update search keyword
+                                    }}
                                     onClick={(e) =>
                                       handleItemPopover(e, item.id)
                                     }
@@ -2601,7 +2627,7 @@ export default function AddSales() {
                                 </select>
                               </td>
                               {/* Secondary Quantity input */}
-                              <td className="p-1 border">
+                              {/* <td className="p-1 border">
                                 <input
                                   type="text"
                                   value={item.quantity?.secondary || ""}
@@ -2615,9 +2641,9 @@ export default function AddSales() {
                                   }
                                   className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
                                 />
-                              </td>
+                              </td> */}
                               {/* Secondary Unit dropdown */}
-                              <td className="p-1 border">
+                              {/* <td className="p-1 border">
                                 <select
                                   value={item.secondaryUnit || ""}
                                   onChange={(e) =>
@@ -2637,7 +2663,7 @@ export default function AddSales() {
                                     </option>
                                   ))}
                                 </select>
-                              </td>
+                              </td> */}
                               {/* Free item quantity */}
                               {allTransactionSettings?.itemsTable
                                 ?.freeItemQuantity && (
@@ -2675,6 +2701,7 @@ export default function AddSales() {
                               <td className="p-1 border">
                                 <input
                                   type="text"
+                                  readOnly={item?.discount?.percentage ? false : true}
                                   value={item.discount.percentage || ""}
                                   onChange={(e) =>
                                     handleNumericInputChange(
@@ -2696,7 +2723,7 @@ export default function AddSales() {
                                 />
                               </td>
                               {/* Tax inputs */}
-                              <td className="p-1 border">
+                              <td className="p-1 border w-[150px]">
                                 <select
                                   value={item.tax.percentage || ""}
                                   onChange={(e) =>
@@ -2788,11 +2815,11 @@ export default function AddSales() {
                                 "primary"
                               ) || 0}
                             </td>
-                            <td className="p-2 border text-center"></td>
+                            {/* <td className="p-2 border text-center"></td> */}
                             <td className="p-2 border text-center">
-                              {getSecondaryQuantityPrice(tab.form?.items) || 0}
+                              {/* {getSecondaryQuantityPrice(tab.form?.items) || 0} */}
                             </td>
-                            <td className="p-2 border text-center"></td>
+                            {/* <td className="p-2 border text-center"></td> */}
                             {allTransactionSettings?.itemsTable
                               ?.freeItemQuantity && (
                               <td className="p-2 border">
@@ -3127,6 +3154,9 @@ export default function AddSales() {
                 vertical: "top",
                 horizontal: "left",
               }}
+              disableAutoFocus
+              disableEnforceFocus
+              disableRestoreFocus
             >
               <Box sx={{ p: 2, maxWidth: 600 }}>
                 <TableContainer>
@@ -3152,7 +3182,7 @@ export default function AddSales() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {items?.map((item) => (
+                      {filteredItems?.map((item) => (
                         <TableRow
                           key={item.id}
                           onClick={() =>

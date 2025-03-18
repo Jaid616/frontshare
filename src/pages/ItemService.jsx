@@ -231,7 +231,7 @@ const ItemService = () => {
       );
 
       await db.put({ ...existingDoc });
-      navigate(-1);
+      // navigate(-1);
       setIsManupulated(true);
     } catch (error) {
       toast.error(error.message || "Failed to add item!");

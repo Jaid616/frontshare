@@ -117,6 +117,21 @@ const LoadingScreen = () => {
   );
 };
 
+
+const disableNumberScroll = () => {
+  document.addEventListener("wheel", function (event) {
+    if (document.activeElement.type === "number") {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener("keydown", function (event) {
+    if (document.activeElement.type === "number" && ["ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+    }
+  });
+};
+
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,6 +153,10 @@ const App = () => {
 
     fetchPhone();
   }, []);
+
+  useEffect(()=>{
+       disableNumberScroll()
+  },[])
 
   useEffect(() => {
     const fetchGeneralSettings = async () => {

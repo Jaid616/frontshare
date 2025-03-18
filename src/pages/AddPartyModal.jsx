@@ -21,6 +21,11 @@ const AddPartyModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [errors, setErrors] = useState({
+    partyName: "",
+    partyGSTIN: "",
+    partyPhone: "",
+  });
   const [formData, setFormData] = useState({
     partyName: "",
     partyPhone: "",
@@ -159,11 +164,35 @@ const AddPartyModal = ({
 
   const handleInputChange = (e) => {
     const { name, value, checked, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+
+    let newValue = value;
+
+    if (type === "checkbox") {
+      newValue = checked;
+    } else if (name === "partyPhone") {
+      newValue = value.replace(/\D/g, "").slice(0, 10); // Only numbers, max 10
+    } else if (name === "partyGSTIN") {
+      newValue = value.toUpperCase().slice(0, 15); // Uppercase, max 15 chars
+    }
+    else if (name === 'openingBalance' || name === 'customLimit')
+    {
+      newValue = value.replace(/[^0-9.]/g, ""); // Remove everything except numbers and .
+    
+      // Prevent multiple decimal points
+      const dotCount = (newValue.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        newValue = newValue.slice(0, newValue.lastIndexOf(".")); // Remove extra dots
+      }
+    }
+  
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+      // Clear only the error of the currently edited field
+  if (errors[name]) {
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  }
   };
+
+  
 
   const handleFileChange = (e) => {
     const { files } = e.target;
@@ -315,6 +344,10 @@ const AddPartyModal = ({
     }
   };
   const handleVerifyPartyName = async (partyName) => {
+    if (!partyName.trim()) {
+      setErrors((prev) => ({ ...prev, partyName: "Party Name is required" }));
+      return;
+    }
     try {
       let existingDoc = await db.get(phone).catch(() => null);
 
@@ -324,12 +357,53 @@ const AddPartyModal = ({
         );
         console.log(partyExists, "This is a party");
         setIsPartyNameUnique(!partyExists);
+        if (partyExists) {
+          setErrors((prev) => ({ ...prev, partyName: "Party name already exists" }));
+        }
       }
     } catch (error) {
       console.error("Error verifying party name:", error);
       return true;
     }
   };
+
+  const validateGSTIN = (gstin) => {
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
+    return gstRegex.test(gstin) ? "" : "Invalid GSTIN format";
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    return phoneRegex.test(phone) ? "" : "Invalid phone number";
+  };
+  const validateEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) ? "" : "Invalid email format";
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    let errorMsg = "";
+
+    if (name === "partyGSTIN" && value !='') {
+      errorMsg = validateGSTIN(value);
+    } else if (name === "partyPhone" && value != '') {
+      errorMsg = validatePhone(value);
+    }
+    else if (name === 'partyEmail' && value != '')
+    {
+      errorMsg = validateEmail(value)
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+  };
+
+
+
+  useEffect(()=>{
+      setErrors({
+        partyName: "",
+        partyGSTIN: "",
+        partyPhone: "",
+      })
+  },[handleClose])
 
   return (
     <div
@@ -351,7 +425,7 @@ const AddPartyModal = ({
         </div>
 
         <div className="p-4 border-b">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-y-4 gap-x-6">
             <div>
               <input
                 type="text"
@@ -360,45 +434,75 @@ const AddPartyModal = ({
                 onChange={handleInputChange}
                 onBlur={() => handleVerifyPartyName(formData.partyName)}
                 placeholder="Party Name *"
-                className="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                // className="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`border p-2 w-full rounded-md focus:outline-none ${
+                  errors.partyName || !isPartyNameUnique
+                    ? "border-red-500 focus:ring-red-500"
+                    : "focus:ring-blue-500"
+                }`}
               />
               {/* Show error message if isUnique is false */}
-              {!isPartyNameUnique && (
+              {/* {!isPartyNameUnique && (
                 <span className="text-red-500 text-xs mt-1 block">
                   Party name already exists
                 </span>
-              )}
+              )} */}
+               {errors.partyName && (
+          <span className="text-red-500 text-xs mt-1">{errors.partyName}</span>
+        )}
             </div>
+            <div>
             <input
               type="text"
               name="partyGSTIN"
               value={formData.partyGSTIN}
               onChange={handleInputChange}
-              placeholder="GSTIN"
-              className="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onBlur={handleBlur}
+              placeholder="Enter GSTIN"
+              className={`border p-2 w-full rounded-md focus:outline-none ${
+                errors.partyGSTIN ? "border-red-500 focus:ring-red-500" : "focus:ring-blue-500"
+              }`}
+            
+          
             />
+  {errors.partyGSTIN && (
+              <p className="text-red-500 text-xs mt-1">{errors.partyGSTIN}</p>
+            )}
+            </div>
+            <div>
             <input
-              type="text"
+              type="number"
               name="partyPhone"
               value={formData.partyPhone}
               onChange={handleInputChange}
-              placeholder="Phone Number"
-              className="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onBlur={handleBlur}
+              placeholder="Enter phone number"
+              className={`border p-2 w-full rounded-md focus:outline-none ${
+                errors.partyPhone ? "border-red-500 focus:ring-red-500" : "focus:ring-blue-500"
+              }`}
+             
             />
+             {errors.partyPhone && (
+                <p className="text-red-500 text-xs mt-1">{errors.partyPhone}</p>
+              )}
+              </div>
+              <div>
+
+             
             <select
               name="partyType"
               value={formData.partyType}
               onChange={handleInputChange}
-              className="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border px-2 pt-1 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="Customer">Customer</option>
               <option value="Supplier">Supplier</option>
             </select>
-
+            </div>
             {allPartySettings?.partyGrouping && (
               <div className="relative">
                 <div
-                  className="w-full border p-2 pr-10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-full border px-2 pt-1 pr-10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
                   <div className="flex justify-between items-center">
@@ -490,7 +594,7 @@ const AddPartyModal = ({
             <button
               onClick={() => setActiveTab(0)}
               className={`py-2 px-4 ${
-                activeTab === 0 ? "border-b-2 border-blue-500" : ""
+                activeTab === 0 ? "border-b-2 border-blue-500 text-blue-500 font-bold" : ""
               }`}
             >
               GST & Address
@@ -498,7 +602,7 @@ const AddPartyModal = ({
             <button
               onClick={() => setActiveTab(1)}
               className={`py-2 px-4 ${
-                activeTab === 1 ? "border-b-2 border-blue-500" : ""
+                activeTab === 1 ? "border-b-2 border-blue-500 text-blue-500 font-bold" : ""
               }`}
             >
               Credit & Balance
@@ -506,7 +610,7 @@ const AddPartyModal = ({
             <button
               onClick={() => setActiveTab(2)}
               className={`py-2 px-4 ${
-                activeTab === 2 ? "border-b-2 border-blue-500" : ""
+                activeTab === 2 ? "border-b-2 border-blue-500 text-blue-500 font-bold" : ""
               }`}
             >
               Additional Fields
@@ -514,14 +618,14 @@ const AddPartyModal = ({
           </div>
         </div>
 
-        <div className="p-0">
-          <TabPanel value={activeTab} index={0}>
-            <div className="space-y-4">
+        <div className="p-0 mt-2">
+          <TabPanel value={activeTab} index={0} className="">
+            <div className="space-y-4 py-4">
               <select
                 name="gstType"
                 value={formData.gstType}
                 onChange={handleInputChange}
-                className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border px-2 pt-1 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="UnRegistered/Consumer">
                   Unregistered/Consumer
@@ -536,11 +640,51 @@ const AddPartyModal = ({
                 name="partyState"
                 value={formData.partyState}
                 onChange={handleInputChange}
-                className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border px-2 pt-1 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="maharashtra">Maharashtra</option>
-                <option value="gujarat">Gujarat</option>
-                <option value="karnataka">Karnataka</option>
+                  <option disabled  value=''>
+                                  Select State 
+                                </option>
+                {[
+                                "Andhra Pradesh",
+                                "Arunachal Pradesh",
+                                "Assam",
+                                "Bihar",
+                                "Chhattisgarh",
+                                "Goa",
+                                "Gujarat",
+                                "Haryana",
+                                "Himachal Pradesh",
+                                "Jharkhand",
+                                "Karnataka",
+                                "Kerala",
+                                "Madhya Pradesh",
+                                "Maharashtra",
+                                "Manipur",
+                                "Meghalaya",
+                                "Mizoram",
+                                "Nagaland",
+                                "Odisha",
+                                "Punjab",
+                                "Rajasthan",
+                                "Sikkim",
+                                "Tamil Nadu",
+                                "Telangana",
+                                "Tripura",
+                                "Uttar Pradesh",
+                                "Uttarakhand",
+                                "West Bengal",
+                                "Andaman and Nicobar Islands",
+                                "Chandigarh",
+                                "Dadra and Nagar Haveli and Daman and Diu",
+                                "Lakshadweep",
+                                "Delhi",
+                                "Puducherry",
+                              ].map((state) => (
+                                <option key={state} value={state}>
+                                  {state}
+                                </option>
+                              ))}
               </select>
 
               <input
@@ -548,9 +692,16 @@ const AddPartyModal = ({
                 name="partyEmail"
                 value={formData.partyEmail}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="Email ID"
-                className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              
+                className={`border p-2 w-full rounded-md focus:outline-none ${
+                  errors.partyEmail ? "border-red-500 focus:ring-red-500" : "focus:ring-blue-500"
+                }`}
               />
+                {errors?.partyEmail && (
+                <p className="text-red-500 text-xs mt-1">{errors?.partyEmail}</p>
+              )}
 
               <textarea
                 name="billingAddress"
@@ -575,9 +726,9 @@ const AddPartyModal = ({
           </TabPanel>
 
           <TabPanel value={activeTab} index={1}>
-            <div className="space-y-4">
+            <div className="space-y-4 py-4">
               <input
-                type="text"
+                // type="number"
                 name="openingBalance"
                 value={formData.openingBalance}
                 onChange={handleInputChange}
@@ -619,11 +770,13 @@ const AddPartyModal = ({
                     onChange={() =>
                       setFormData((prev) => ({
                         ...prev,
+                        customLimit : '',
                         creditLimit:
                           prev.creditLimit === "no-limit"
                             ? "custom"
                             : "no-limit",
                       }))
+
                     }
                     className="h-4 w-4"
                   />
@@ -631,7 +784,7 @@ const AddPartyModal = ({
                 </div>
                 {formData.creditLimit !== "no-limit" && (
                   <input
-                    type="number"
+                    // type="number"
                     name="customLimit"
                     value={formData.customLimit}
                     onChange={handleInputChange}
@@ -652,7 +805,7 @@ const AddPartyModal = ({
           </TabPanel>
 
           <TabPanel value={activeTab} index={2}>
-            <div className="space-y-4">
+            <div className="space-y-4 py-4">
               <div className="flex items-center space-x-2 mb-6">
                 <h2 className="text-lg font-semibold">Additional Fields</h2>
               </div>
@@ -750,8 +903,8 @@ const AddPartyModal = ({
         <div className="border-t p-4 flex justify-end gap-2">
           <button
             onClick={handleSubmit}
-            disabled={!isPartyNameUnique}
-            className="px-4 py-2 border rounded-md bg-blue-500 text-white hover:bg-blue-600"
+            disabled={!isPartyNameUnique || Object.values(errors).some((err) => err)}
+            className=" disabled:bg-blue-200 px-4 py-2 border rounded-md bg-blue-500 text-white hover:bg-blue-600"
           >
             {isEdit ? "Update" : "Save"}
           </button>
