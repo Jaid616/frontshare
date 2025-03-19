@@ -183,16 +183,30 @@ const SalesInvoices = () => {
   const handleDelete = async (billId) => {
     try {
       const existingDoc = await db.get(phone);
-      existingDoc.bills = existingDoc.bills.filter((doc) => doc.id !== billId);
-      await db.put({ ...existingDoc });
-
-      // Update state with the new bills list
-      setBills(existingDoc.bills);
+      
+      console.log("Before deletion:", existingDoc.bills, "Deleting ID:", billId);
+  
+      // Ensure billId and doc.id are of the same type
+      const updatedBills = existingDoc.bills.filter((doc) => String(doc.id) !== String(billId));
+  
+      console.log("After deletion:", updatedBills);
+  
+      // Update document only if the list is modified
+      if (updatedBills.length !== existingDoc.bills.length) {
+        existingDoc.bills = updatedBills;
+        await db.put({ ...existingDoc });
+  
+        // Update state
+        setBills(updatedBills);
+      } else {
+        console.warn("No matching record found for deletion.");
+      }
     } catch (err) {
       console.error("Error deleting bill:", err);
       setError(err);
     }
   };
+  
 
   return (
     <div className="p-2 bg-gray-100 min-h-screen text-sm w-full">

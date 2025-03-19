@@ -68,7 +68,7 @@ const InvoicePreview = ({ invoiceData }) => {
       const discountAmount = item.discountAmount || 0;
   
       // 🛑 Extract numeric tax value from string (e.g., "GST (CGST) 9%")
-      let taxRate = parseFloat(item.tax.match(/\d+/)?.[0]) || 0;
+      let taxRate = parseFloat(item?.tax?.match(/\d+/)?.[0]) || 0;
       
       // 🛑 Apply tax to taxAmount field correctly
       const taxAmount = (taxRate / 100) * item.taxAmount;
@@ -214,18 +214,23 @@ const InvoicePreview = ({ invoiceData }) => {
                 Total
               </td>
               <td className="border border-gray-300 p-1 text-right">
-                {totals.currency} {invoiceData.items.map((item) => item.pricePerUnit.toFixed(2)).join(", ")}
+                {/* {totals.currency} {invoiceData.items.map((item) => item.pricePerUnit.toFixed(2)).join(", ")} */}
+                {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.pricePerUnit, 0)).toFixed(2)}
               </td>
               <td className="border border-gray-300 p-1 text-right">
-                {totals.currency} {invoiceData.items.map((item) => item.discountAmount.toFixed(2)).join(", ")}
+                {/* {totals.currency} {invoiceData.items.map((item) => item.discountAmount.toFixed(2)).join(", ")} */}
+                {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.discountAmount, 0)).toFixed(2)}
+
               </td>
               {totals.totalTax > 0 && (
                 <td className="border border-gray-300 p-1 text-right">
-                  {totals.currency} {invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ")}
+                  {/* {totals.currency} {invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ")} */}
+                  {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0)).toFixed(2)}
                 </td>
               )}
               <td className="border border-gray-300 p-1 text-right">
-                {totals.currency} {invoiceData.items.map((item) => item.amount.toFixed(2)).join(", ")}
+                {/* {totals.currency} {invoiceData.items.map((item) => item.amount.toFixed(2)).join(", ")} */}
+                {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.amount, 0)).toFixed(2)}
               </td>
             </tr>
           </tbody>
@@ -255,14 +260,17 @@ const InvoicePreview = ({ invoiceData }) => {
                   <tbody>
                     <tr>
                       <td className="border border-gray-300 p-1 text-right">
-                        {totals.currency} {invoiceData.items.map((item) => item.amount.toFixed(2)).join(", ") - invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ") - invoiceData.items.map((item) => item.discountAmount.toFixed(2)).join(", ")}
+                        {/* {totals.currency} {invoiceData.items.map((item) => item.amount.toFixed(2)).join(", ") - invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ") - invoiceData.items.map((item) => item.discountAmount.toFixed(2)).join(", ")} */}
+                        {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.pricePerUnit, 0)).toFixed(2)-(invoiceData.items.reduce((sum, item) => sum + item.discountAmount, 0)).toFixed(2)}
                       </td>
                       <td className="border border-gray-300 p-1 text-right">
-                        {totals.currency} {totals.totalTax.toFixed(2)}
+                        {/* {totals.currency} {totals.totalTax.toFixed(2)} */}
+                        {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0)).toFixed(2)}
                       </td>
                       {totals.vatAmount > 0 && (
                         <td className="border border-gray-300 p-1 text-right">
-                          {totals.currency} {invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ")}
+                          {/* {totals.currency} {invoiceData.items.map((item) => item.taxAmount.toFixed(2)).join(", ")} */}
+                          {totals.currency} {(invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0)).toFixed(2)}
                         </td>
                       )}
                     </tr>
