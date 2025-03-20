@@ -893,7 +893,6 @@ export default function AddSales() {
   };
 
   const handleItemSelect = (tabIndex, rowId, currentItem) => {
-    console.log(currentItem , "cu")
     const updatedTabs = [...tabs];
     const itemIndex = updatedTabs[tabIndex].form.items.findIndex(
       (item) => item.id === rowId
@@ -908,19 +907,11 @@ export default function AddSales() {
         discountAmount = currentItem.saleDiscount;
       }
 
-      // const updatedDiscount = {
-      //   percentage:
-      //     currentItem.saleDiscountType === "Percentage"
-      //       ? currentItem.saleDiscount
-      //       : updatedTabs[tabIndex].form.items[itemIndex].discount.percentage,
-      //   amount: discountAmount,
-      // };
-
       const updatedDiscount = {
         percentage:
           currentItem.saleDiscountType === "Percentage"
             ? currentItem.saleDiscount
-            : '',
+            : updatedTabs[tabIndex].form.items[itemIndex].discount.percentage,
         amount: discountAmount,
       };
 
@@ -934,8 +925,8 @@ export default function AddSales() {
         amount: taxAmount,
       };
       console.log(
-        currentItem.salePrice - discountAmount,
-        currentItem.salePrice,
+        currentItem.price - discountAmount,
+        currentItem.price,
         discountAmount,
         "This is the updated discount"
       );
@@ -971,17 +962,18 @@ export default function AddSales() {
         price: currentItem.salePrice,
         itemId: currentItem.itemCode,
         primaryUnit: currentItem.quantity.primary,
-        // secondaryUnit: currentItem.quantity.secondary,
+        secondaryUnit: currentItem.quantity.secondary,
         quantity: {
           primary: 1,
-          // secondary: 1,
+          secondary: 1,
         },
         discount: updatedDiscount,
         // tax: updatedTax,
         amount:
           currentItem.salePrice -
           discountAmount +
-          taxAmount
+          taxAmount +
+          updatedSecondaryUnitPrice,
       };
     }
     setSelectedItem(currentItem);
@@ -1145,7 +1137,7 @@ export default function AddSales() {
 
     return result.trim() + " rupees";
   };
- 
+
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [filteredParties, setFilteredParties] = useState(parties);
@@ -1364,7 +1356,7 @@ export default function AddSales() {
             console.log(`Mapping item ${i}: `, item);
             return {
               name: item?.itemName,
-              quantity: `${item?.quantity?.primary} ${item?.primaryUnit || ''},`,
+              quantity: `${item?.quantity?.primary} ${item?.primaryUnit}, ${item?.quantity?.secondary} ${item?.secondaryUnit}`,
               pricePerUnit: Number(item?.price),
               tax: Number(item?.tax?.amount),
               freeItemQuantity: item?.freeItemQuantity,
@@ -1467,11 +1459,9 @@ export default function AddSales() {
       prevTabs.map((tab) => {
         const newItems = tab.form.items.map((item) => {
           if (item.id === itemId) {
-            console.log(item, "item");
-    
             let updatedItem;
             let extractedTaxPercentage = null;
-    
+
             if (subfield) {
               // Handle tax percentage extraction from dropdown
               if (
@@ -1479,13 +1469,13 @@ export default function AddSales() {
                 subfield === "percentage" &&
                 typeof value === "string"
               ) {
-                const match = value.match(/(\d+(\.\d+)?)%/); // Extracts numeric part before %
+                const match = value.match(/(\d+(\.\d+)?)%/); // Extracts the numeric part before %
                 if (match) {
                   extractedTaxPercentage = parseFloat(match[1]); // Convert to number
                 } else {
                   extractedTaxPercentage = value === "" ? "" : 0; // Empty string if nothing selected
                 }
-    
+
                 updatedItem = {
                   ...item,
                   [field]: {
@@ -1508,42 +1498,37 @@ export default function AddSales() {
               // Handle regular fields
               updatedItem = { ...item, [field]: value };
             }
-    
-            // Ensure discount and tax are objects before assigning amount
-            updatedItem.discount = typeof updatedItem.discount === "object" ? updatedItem.discount : {};
-            updatedItem.tax = typeof updatedItem.tax === "object" ? updatedItem.tax : {};
-    
+
             // Specific handling for different field changes
             if (
               field === "quantity" ||
               field === "price" ||
-              field === "primaryUnit"
+              field === "primaryUnit" ||
+              field === "secondaryUnit"
             ) {
               // Recalculate totals for quantity, price, and unit changes
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals?.finalAmount ?? 0;
-              updatedItem.discount.amount = totals?.discountAmount ?? 0;
-              updatedItem.tax.amount = totals?.taxAmount ?? 0;
+              updatedItem.amount = totals.finalAmount;
+              updatedItem.discount.amount = totals.discountAmount;
+              updatedItem.tax.amount = totals.taxAmount;
             } else if (field === "discount" && subfield === "percentage") {
               // For discount percentage changes, recalculate all totals
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals.finalAmount ?? 0;
-              updatedItem.discount.amount = totals.discountAmount ?? 0;
-              updatedItem.tax.amount = totals.taxAmount ?? 0;
+              updatedItem.amount = totals.finalAmount;
+              updatedItem.discount.amount = totals.discountAmount;
+              updatedItem.tax.amount = totals.taxAmount;
             } else if (field === "tax" && subfield === "percentage") {
               // For tax percentage changes, recalculate totals
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals.finalAmount ?? 0;
-              updatedItem.tax.amount = totals.taxAmount ?? 0;
+              updatedItem.amount = totals.finalAmount;
+              updatedItem.tax.amount = totals.taxAmount;
             }
-    
-            console.log(updatedItem, "after update");
-    
+
             return updatedItem;
           }
           return item;
         });
-    
+
         // Calculate bill totals
         const billTotals = calculateBillTotals(newItems, conversions);
         const finalTotals = applyBillLevelDiscountAndTax(
@@ -1551,12 +1536,12 @@ export default function AddSales() {
           tab.form.discount,
           tab.form.tax
         );
-    
+
         // Apply round off if enabled
         const roundedTotal = tab.form.roundOff
           ? roundOff(finalTotals.grandTotal)
           : finalTotals.grandTotal;
-    
+
         return {
           ...tab,
           form: {
@@ -1567,7 +1552,6 @@ export default function AddSales() {
         };
       })
     );
-    
   };
 
   const handleNumericInputChange = (itemId, field, value, subfield = null) => {
@@ -1580,7 +1564,7 @@ export default function AddSales() {
         : !isNaN(parseFloat(value))
         ? parseFloat(value)
         : ""; // Convert to number if possible
-    
+
     handleItemChange(itemId, field, numericValue, subfield);
   };
 
@@ -1588,7 +1572,7 @@ export default function AddSales() {
   const calculateItemTotals = (item, conversions) => {
     // Extract numeric values with defaults
     const primaryQuantity = parseFloat(item.quantity?.primary || 0);
-    // const secondaryQuantity = parseFloat(item.quantity?.secondary || 0);
+    const secondaryQuantity = parseFloat(item.quantity?.secondary || 0);
     const price = parseFloat(item.price || 0);
     const discountPercentage = parseFloat(item.discount?.percentage || 0);
 
@@ -1603,7 +1587,8 @@ export default function AddSales() {
     // Find the conversion rate for secondary unit
     const conversion = conversions?.find(
       (conv) =>
-        conv.primaryUnit === item.primaryUnit 
+        conv.primaryUnit === item.primaryUnit &&
+        conv.secondaryUnit === item.secondaryUnit
     );
 
     const conversionRate = conversion
@@ -1615,11 +1600,10 @@ export default function AddSales() {
 
     // Calculate base amount including both primary and secondary quantities
     const primaryAmount = primaryQuantity * price;
-    // const secondaryAmount = secondaryQuantity * oneSecondaryUnitPrice;
+    const secondaryAmount = secondaryQuantity * oneSecondaryUnitPrice;
 
     // Add primary and secondary amounts for the base amount
-    const baseAmount = primaryAmount
-    //  + secondaryAmount;
+    const baseAmount = primaryAmount + secondaryAmount;
 
     // Calculate discount amount
     const discountAmount = (baseAmount * discountPercentage) / 100;
@@ -1640,7 +1624,7 @@ export default function AddSales() {
       taxAmount,
       finalAmount,
       primaryAmount,
-      // secondaryAmount,
+      secondaryAmount,
     };
   };
 
@@ -1696,37 +1680,23 @@ export default function AddSales() {
   };
 
   // Get total for a field across all items
-  const getTotalForField = (items, field, subfield, conversions, charges = []) => {
-    if (!Array.isArray(items)) return 0; // Ensure items is an array
-  
-    let totalAmount = 0;
-  
-    items.forEach((item) => {
-      if (!item || typeof item !== "object") return;
-  
-      let value = 0;
-  
-      if (field === "amount") {
-        // Use calculateItemTotals for proper calculations
-        const totals = calculateItemTotals(item, conversions);
-        value = totals.finalAmount || 0;
-      } else if (subfield && typeof item[field] === "object") {
-        value = parseFloat(item[field]?.[subfield]) || 0;
-      } else if (!subfield) {
-        value = parseFloat(item[field]) || 0;
+  const getTotalForField = (items, field, subfield, conversions) => {
+    if (!items || !Array.isArray(items)) return 0;
+
+    return items.reduce((total, item) => {
+      let value;
+
+      if (subfield && item[field]?.[subfield] !== undefined) {
+        value = parseFloat(item[field][subfield]);
+      } else if (!subfield && item[field] !== undefined) {
+        value = parseFloat(item[field]);
+      } else {
+        return total;
       }
-  
-      totalAmount += value;
-    });
-  
-    // // Include charges if applicable
-    // const chargesTotal = Array.isArray(charges)
-    //   ? charges.reduce((total, charge) => total + (parseFloat(charge.totalWithTax) || 0), 0)
-    //   : 0;
-  
-    return totalAmount.toFixed(2); // Keep consistency with `calculateGrandTotal`
+
+      return !isNaN(value) ? total + value : total;
+    }, 0);
   };
-  
 
   // Updated function to calculate secondary quantity price total
   const getSecondaryQuantityPrice = (items) => {
@@ -1856,18 +1826,18 @@ export default function AddSales() {
     recalculateAllItems();
   }, []);
 
-
   const [searchKeyword, setSearchKeyword] = useState("");
+ 
+  // Function to handle search input changes
+  const handleSearchChange = (event) => {
+    setSearchKeyword(event.target.value);
+  };
+  
+  // Filter items based on searchKeyword
+  const filteredItems = items?.filter((item) =>
+    item.itemName.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
 
-// Function to handle search input changes
-const handleSearchChange = (event) => {
-  setSearchKeyword(event.target.value);
-};
-
-// Filter items based on searchKeyword
-const filteredItems = items?.filter((item) =>
-  item.itemName.toLowerCase().includes(searchKeyword.toLowerCase())
-);
   return (
     <>
       {selectedTheme ? (
@@ -2452,7 +2422,7 @@ const filteredItems = items?.filter((item) =>
                             {/* Quantity columns */}
                             <th
                               className="p-2 text-xs text-center text-white bg-blue-500 border border-blue-600"
-                              colSpan={2}
+                              colSpan={4}
                             >
                               QTY
                             </th>
@@ -2497,17 +2467,17 @@ const filteredItems = items?.filter((item) =>
                               <th className="border-b" />
                             ))}
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
-                              Base (QTY)
+                              Base
                             </th>
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Unit
                             </th>
-                            {/* <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
+                            <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Secondary
                             </th>
                             <th className="p-1 text-xs text-center text-white bg-blue-500 border border-blue-600">
                               Unit
-                            </th> */}
+                            </th>
                             {allTransactionSettings?.itemsTable
                               ?.freeItemQuantity && (
                               <th className="border bg-blue-500" />
@@ -2531,7 +2501,7 @@ const filteredItems = items?.filter((item) =>
                           </tr>
                         </thead>
                         <tbody>
-                          {tab?.form?.items?.map((item, itemIndex) => (
+                          {tab.form.items.map((item, itemIndex) => (
                             <tr key={item.id} className="hover:bg-gray-50">
                               <td className="p-1 border text-center">
                                 {itemIndex + 1}
@@ -2541,17 +2511,17 @@ const filteredItems = items?.filter((item) =>
                                   <input
                                     type="text"
                                     value={item.itemName || searchKeyword}
-                                    // onChange={(e) =>
-                                    //   handleNumericInputChange(
-                                    //     item.id,
-                                    //     "itemName",
-                                    //     e.target.value
-                                    //   )
-                                    // }
-                                    onChange={(e) => {
-                                      handleNumericInputChange(item.id, "itemName", e.target.value);
-                                      setSearchKeyword(e.target.value); // Update search keyword
-                                    }}
+                                    onChange={(e) =>
+                                    {
+
+                                    
+                                      handleNumericInputChange(
+                                        item.id,
+                                        "itemName",
+                                        e.target.value
+                                      )
+                                      setSearchKeyword(e.target.value)}
+                                    }
                                     onClick={(e) =>
                                       handleItemPopover(e, item.id)
                                     }
@@ -2612,8 +2582,8 @@ const filteredItems = items?.filter((item) =>
                               {/* Base Quantity input */}
                               <td className="p-1 border">
                                 <input
-                                  // type="text"
-                                  value={item?.quantity?.primary || ""}
+                                  type="text"
+                                  value={item.quantity?.primary || ""}
                                   onChange={(e) =>
                                     handleNumericInputChange(
                                       item.id,
@@ -2648,7 +2618,7 @@ const filteredItems = items?.filter((item) =>
                                 </select>
                               </td>
                               {/* Secondary Quantity input */}
-                              {/* <td className="p-1 border">
+                              <td className="p-1 border">
                                 <input
                                   type="text"
                                   value={item.quantity?.secondary || ""}
@@ -2662,9 +2632,9 @@ const filteredItems = items?.filter((item) =>
                                   }
                                   className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
                                 />
-                              </td> */}
+                              </td>
                               {/* Secondary Unit dropdown */}
-                              {/* <td className="p-1 border">
+                              <td className="p-1 border">
                                 <select
                                   value={item.secondaryUnit || ""}
                                   onChange={(e) =>
@@ -2684,7 +2654,7 @@ const filteredItems = items?.filter((item) =>
                                     </option>
                                   ))}
                                 </select>
-                              </td> */}
+                              </td>
                               {/* Free item quantity */}
                               {allTransactionSettings?.itemsTable
                                 ?.freeItemQuantity && (
@@ -2722,7 +2692,6 @@ const filteredItems = items?.filter((item) =>
                               <td className="p-1 border">
                                 <input
                                   type="text"
-                                  // readOnly={item?.discount?.percentage ? false : true}
                                   value={item.discount.percentage || ""}
                                   onChange={(e) =>
                                     handleNumericInputChange(
@@ -2738,15 +2707,15 @@ const filteredItems = items?.filter((item) =>
                               <td className="p-1 border">
                                 <input
                                   type="text"
-                                  value={item?.discount?.amount || ""}
+                                  value={item.discount.amount || ""}
                                   readOnly
                                   className="w-full text-xs bg-gray-100 border border-gray-300 rounded px-2 py-1 focus:outline-none"
                                 />
                               </td>
                               {/* Tax inputs */}
-                              <td className="p-1 border w-[150px]">
+                              <td className="p-1 border">
                                 <select
-                                  value={item?.tax?.percentage || ""}
+                                  value={item.tax.percentage || ""}
                                   onChange={(e) =>
                                     handleNumericInputChange(
                                       item.id,
@@ -2836,11 +2805,11 @@ const filteredItems = items?.filter((item) =>
                                 "primary"
                               ) || 0}
                             </td>
-                            {/* <td className="p-2 border text-center"></td> */}
+                            <td className="p-2 border text-center"></td>
                             <td className="p-2 border text-center">
-                              {/* {getSecondaryQuantityPrice(tab.form?.items) || 0} */}
+                              {getSecondaryQuantityPrice(tab.form?.items) || 0}
                             </td>
-                            {/* <td className="p-2 border text-center"></td> */}
+                            <td className="p-2 border text-center"></td>
                             {allTransactionSettings?.itemsTable
                               ?.freeItemQuantity && (
                               <td className="p-2 border">
@@ -3023,13 +2992,10 @@ const filteredItems = items?.filter((item) =>
                           <input
                             type="text"
                             className="w-[150px] p-2 border border-gray-300 rounded-sm text-sm"
-                            // value={getTotalForField(
-                            //   tab[index]?.form.items,
-                            //   "amount"
-                            // )}
-                            value={(
-                              tab?.form?.items?.reduce((sum, item) => sum + (parseFloat(item?.amount) || 0), 0)
-                            ).toFixed(2)}
+                            value={getTotalForField(
+                              tab[index]?.form.items,
+                              "amount"
+                            )}
                             readOnly
                           />
 
@@ -3039,21 +3005,18 @@ const filteredItems = items?.filter((item) =>
                           <input
                             type="text"
                             className="w-[150px] p-2 border border-gray-300 rounded-sm text-sm"
-                            // value={
-                            //   tab[index]?.form.charges
-                            //     ? tab[index]?.form.charges
-                            //         .reduce(
-                            //           (total, charge) =>
-                            //             total +
-                            //             (parseFloat(charge.totalWithTax) || 0),
-                            //           0
-                            //         )
-                            //         .toFixed(2)
-                            //     : "0.00"
-                            // }
-                            value={(
-                              tab?.form?.items?.reduce((sum, item) => sum + (parseFloat(item?.tax?.amount) || 0), 0)
-                            ).toFixed(2)}
+                            value={
+                              tab[index]?.form.charges
+                                ? tab[index]?.form.charges
+                                    .reduce(
+                                      (total, charge) =>
+                                        total +
+                                        (parseFloat(charge.totalWithTax) || 0),
+                                      0
+                                    )
+                                    .toFixed(2)
+                                : "0.00"
+                            }
                             readOnly
                           />
 
@@ -3181,9 +3144,9 @@ const filteredItems = items?.filter((item) =>
                 vertical: "top",
                 horizontal: "left",
               }}
-              disableAutoFocus
-              disableEnforceFocus
               disableRestoreFocus
+              disableEnforceFocus
+              disableAutoFocus
             >
               <Box sx={{ p: 2, maxWidth: 600 }}>
                 <TableContainer>
