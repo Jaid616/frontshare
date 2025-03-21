@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Plus,
@@ -15,234 +15,503 @@ import "react-toastify/dist/ReactToastify.css";
 import { decodeToken } from "../DecodeToken";
 import db from "../config/dbConfig";
 
-
-
-
-const AddBankModal = ({isEdit , setIsAddBankModalOpen , formData , handleAddBank , setFormData }) => {
+const AddBankModal = ({
+  isEdit,
+  setIsAddBankModalOpen,
+  formData,
+  handleAddBank,
+  setFormData,
+}) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-  
+
     // Validation for openingBalance: Only numbers, no negative values
     // Validation for numbers: Only allow digits (0-9), no negative values
-    if ((name === "openingBalance" || name === "accountNumber") && !/^\d*$/.test(value)) {
+    if (
+      (name === "openingBalance" || name === "accountNumber") &&
+      !/^\d*$/.test(value)
+    ) {
       return;
     }
-  
+
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
   return (
-<>
-<div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl">
-      {/* Header */}
+    <>
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl">
+          {/* Header */}
 
-      <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-lg font-medium">Add Bank Account</h2>
+          <div className="flex justify-between items-center p-4 border-b">
+            <h2 className="text-lg font-medium">Add Bank Account</h2>
 
-        <button
-          onClick={() => setIsAddBankModalOpen(false)}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X size={20} />
-        </button>
-      </div>
-        <div className="p-6">
-          {/* Form Fields */}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label htmlFor="bankName" className="sr-only">
-                Account Display Name
-              </label>
-
-              <input
-                type="text"
-                id="bankName"
-                name="bankName"
-                value={formData?.bankName}
-                onChange={handleInputChange}
-                placeholder="Account Display Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="openingBalance" className="sr-only">
-                Opening Balance
-              </label>
-
-              <input
-                type="text"
-                id="openingBalance"
-                name="openingBalance"
-                value={formData?.openingBalance}
-                onChange={handleInputChange}
-                placeholder="Opening Balance"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="relative">
-              <label className="text-xs text-gray-500 absolute -top-5">
-                As Of Date
-              </label>
-
-              <div className="relative">
-                <input
-                  type="date"
-                  id="asOfDate"
-                  name="asOfDate"
-                  value={formData?.asOfDate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
+            <button
+              onClick={() => setIsAddBankModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={20} />
+            </button>
           </div>
+          <div className="p-6">
+            {/* Form Fields */}
 
-          {/* Checkboxes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label htmlFor="bankName" className="sr-only">
+                  Account Display Name
+                </label>
 
-          <div className="bg-gray-50 p-4 rounded-md mb-6">
-            <div className="mb-3 flex items-center">
-              <input
-                type="checkbox"
-                id="printUPI"
-                name="printUPI"
-                checked={formData?.printUPI}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-
-              <label
-                htmlFor="printUPI"
-                className="ml-2 text-sm font-medium text-gray-700"
-              >
-                Print UPI QR Code on Invoices
-              </label>
-
-              <InfoIcon size={16} className="ml-2 text-gray-400" />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="printBankDetails"
-                name="printBankDetails"
-                checked={formData?.printBankDetails}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-
-              <label
-                htmlFor="printBankDetails"
-                className="ml-2 text-sm font-medium text-gray-700"
-              >
-                Print bank details on invoices
-              </label>
-
-              <InfoIcon size={16} className="ml-2 text-gray-400" />
-            </div>
-          </div>
-
-          {
-            formData?.printUPI ? <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label htmlFor="accountNumber" className="sr-only">
-                Account Number
-              </label>
-
-              <input
-                type="number"
-                id="accountNumber"
-                name="accountNumber"
-                value={formData?.accountNumber}
-                onChange={handleInputChange}
-                placeholder="Account Number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="openingBalance" className="sr-only">
-                 IFSC Code
-              </label>
-
-              <input
-                type="text"
-                id="ifscCode"
-                name="ifscCode"
-                value={formData?.ifscCode}
-                onChange={handleInputChange}
-                placeholder="IFSC Code"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="relative">
-              <label className="text-xs text-gray-500 absolute -top-5">
-                  UPI ID
-              </label>
-
-              <div className="relative">
                 <input
                   type="text"
-                  id=""
-                  name="upiId"
-                  value={formData?.upiId || ''}
-                  placeholder="UPI ID"
+                  id="bankName"
+                  name="bankName"
+                  value={formData?.bankName}
                   onChange={handleInputChange}
+                  placeholder="Account Display Name"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              <div>
+                <label htmlFor="openingBalance" className="sr-only">
+                  Opening Balance
+                </label>
+
+                <input
+                  type="text"
+                  id="openingBalance"
+                  name="openingBalance"
+                  value={formData?.openingBalance}
+                  onChange={handleInputChange}
+                  placeholder="Opening Balance"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="relative">
+                <label className="text-xs text-gray-500 absolute -top-5">
+                  As Of Date
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="date"
+                    id="asOfDate"
+                    name="asOfDate"
+                    value={formData?.asOfDate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Checkboxes */}
+
+            <div className="bg-gray-50 p-4 rounded-md mb-6">
+              <div className="mb-3 flex items-center">
+                <input
+                  type="checkbox"
+                  id="printUPI"
+                  name="printUPI"
+                  checked={formData?.printUPI}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+
+                <label
+                  htmlFor="printUPI"
+                  className="ml-2 text-sm font-medium text-gray-700"
+                >
+                  Print UPI QR Code on Invoices
+                </label>
+
+                <InfoIcon size={16} className="ml-2 text-gray-400" />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="printBankDetails"
+                  name="printBankDetails"
+                  checked={formData?.printBankDetails}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+
+                <label
+                  htmlFor="printBankDetails"
+                  className="ml-2 text-sm font-medium text-gray-700"
+                >
+                  Print bank details on invoices
+                </label>
+
+                <InfoIcon size={16} className="ml-2 text-gray-400" />
+              </div>
+            </div>
+
+            {formData?.printUPI ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <label htmlFor="accountNumber" className="sr-only">
+                      Account Number
+                    </label>
+
+                    <input
+                      type="number"
+                      id="accountNumber"
+                      name="accountNumber"
+                      value={formData?.accountNumber}
+                      onChange={handleInputChange}
+                      placeholder="Account Number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="openingBalance" className="sr-only">
+                      IFSC Code
+                    </label>
+
+                    <input
+                      type="text"
+                      id="ifscCode"
+                      name="ifscCode"
+                      value={formData?.ifscCode}
+                      onChange={handleInputChange}
+                      placeholder="IFSC Code"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <label className="text-xs text-gray-500 absolute -top-5">
+                      UPI ID
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id=""
+                        name="upiId"
+                        value={formData?.upiId || ""}
+                        placeholder="UPI ID"
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
+
+            {formData?.printBankDetails ? (
+              <>
+                {" "}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className=" relative">
+                    <label htmlFor="accountholder" className="sr-only">
+                      Account HolderName
+                    </label>
+
+                    <input
+                      type="text"
+                      id="accountholder"
+                      name="accountHolder"
+                      value={formData?.accountHolder}
+                      onChange={handleInputChange}
+                      placeholder="Account Holder Name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
           </div>
-            </> : <>
-            </>
-          }
 
+          {/* Footer */}
+
+          <div className="flex justify-end p-4 border-t">
+            <button
+              type="submit"
+              onClick={handleAddBank}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium"
+            >
+              {isEdit ? "Update" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+
+
+
+
+const TransferPopupContent = ({phone, banks, transferType, onClose }) => {
+  const [formData, setFormData] = useState({
+    from: transferType === "Cash to Bank Transfer" ? "Cash" : "",
+    to: transferType === "Bank to Cash Transfer" ? "Cash" : "",
+    amount: "",
+    adjustmentType: "Increase Balance",
+    adjustmentDate: new Date().toISOString().split("T")[0],
+    description: "",
+  });
+
+  useEffect(()=>{
+       if(transferType === "Bank to Cash Transfer")
+       {
+        setFormData((pre)=> ({...pre , adjustmentType: 'Cash Withdraw' }))
+       }
+       if(transferType === "Cash to Bank Transfer")
+        {
+         setFormData((pre)=> ({...pre , adjustmentType: 'Deposite Cash' }))
+        }
+        if(transferType === "Bank to Bank Transfer")
           {
-            formData?.printBankDetails ? 
-            <>   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className=" relative">
-              <label htmlFor="accountholder" className="sr-only">
-                Account HolderName
-              </label>
-
-              <input
-                type="text"
-                id="accountholder"
-                name="accountHolder"
-                value={formData?.accountHolder}
-                onChange={handleInputChange}
-                placeholder="Account Holder Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            </div></>:<></>
+           setFormData((pre)=> ({...pre , adjustmentType: 'Bank to Bank' }))
           }
-        </div>
+  },[])
 
-        {/* Footer */}
 
-        <div className="flex justify-end p-4 border-t">
-          <button
-            type="submit"
-            onClick={handleAddBank}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium"
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (!formData.amount || formData.amount <= 0) {
+        toast.error("Enter a valid amount.");
+        return;
+      }
+  
+      // ✅ Fetch the latest user document to get the latest _rev
+      let userDoc;
+      try {
+        userDoc = await db.get(phone); // Fetch latest doc
+      } catch (error) {
+        toast.error("User not found.");
+        return;
+      }
+  
+      const banks = userDoc.banks || [];
+      let fromBankIndex = banks.findIndex((b) => b.bankName === formData.from);
+      let toBankIndex = banks.findIndex((b) => b.bankName === formData.to);
+      let transactionId = `txn-${new Date().toISOString()}`;
+  
+      if (formData.from === "Cash") {
+        if (toBankIndex !== -1) {
+          banks[toBankIndex].balance += Number(formData.amount);
+        }
+      } else if (formData.to === "Cash") {
+        if (fromBankIndex !== -1 && banks[fromBankIndex].balance >= formData.amount) {
+          banks[fromBankIndex].balance -= Number(formData.amount);
+        } else {
+          toast.error("Insufficient balance.");
+          return;
+        }
+      } else if (fromBankIndex !== -1 && toBankIndex !== -1) {
+        if (banks[fromBankIndex].balance >= formData.amount) {
+          banks[fromBankIndex].balance -= Number(formData.amount);
+          banks[toBankIndex].balance += Number(formData.amount);
+        } else {
+          toast.error("Insufficient balance.");
+          return;
+        }
+      } else if (transferType === "Adjust Bank Balance" && fromBankIndex !== -1) {
+        if (formData.adjustmentType === "Increase Balance") {
+          banks[fromBankIndex].balance += Number(formData.amount);
+        } else if (formData.adjustmentType === "Reduce Balance") {
+          if (banks[fromBankIndex].balance >= formData.amount) {
+            banks[fromBankIndex].balance -= Number(formData.amount);
+          } else {
+            toast.error("Insufficient balance to reduce.");
+            return;
+          }
+        }
+      } else {
+        toast.error("Invalid transfer details.");
+        return;
+      }
+  
+      // ✅ Add Transaction to user document
+      const transactionRecord = {
+        transactionId,
+        from: formData.from,
+        to: formData.to,
+        fromBankId: fromBankIndex !== -1 ? banks[fromBankIndex]._id : null,
+        toBankId: toBankIndex !== -1 ? banks[toBankIndex]._id : null,
+        amount: Number(formData.amount),
+        date: formData.adjustmentDate,
+        type: formData.adjustmentType,
+        description: formData.description,
+      };
+      
+  
+      if (!userDoc.transactions) {
+        userDoc.transactions = [];
+      }
+      userDoc.transactions.push(transactionRecord);
+  
+      // ✅ Save updated document with latest _rev
+      await db.put({ ...userDoc, banks, _rev: userDoc._rev });
+  
+      toast.success("Transaction successful!");
+      onClose();
+    } catch (error) {
+      console.error("Transaction error:", error);
+      toast.error(`Transaction failed: ${error.message}`);
+    }
+  };
+  
+  
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-lg w-1/2">
+      <h2 className="text-lg font-semibold mb-4">{transferType.replace(/-/g, " ")}</h2>
+
+      {/* From & To Dropdowns */}
+      <div className="flex gap-4">
+        {/* From Field */}
+        <div className="w-1/2">
+          <label className="text-sm font-medium">From</label>
+          <select
+            name="from"
+            value={formData.from}
+            onChange={handleChange}
+            className="w-full border rounded-md px-3 py-2 mt-1"
+            disabled={transferType === "Cash to Bank Transfer"}
           >
-            {isEdit ? 'Update' : 'Save'}
-          </button>
+            {transferType === "Cash to Bank Transfer" ? (
+              <option value="Cash">Cash</option>
+            ) : (
+              <>
+                <option value="">Select</option>
+                {banks.map((bank) => (
+                  <option key={bank.accountNumber} value={bank.bankName}>
+                    {bank.bankName} - {bank.accountNumber}
+                  </option>
+                ))}
+              </>
+            )}
+          </select>
         </div>
-    </div>
-  </div>
+        {transferType === "Adjust Bank Balance" ? (
+        <div className="w-1/2">
+          <label className="text-sm font-medium">Type</label>
+          <select
+            name="adjustmentType"
+            value={formData.adjustmentType}
+            onChange={handleChange}
+            className="w-full border rounded-md px-3 py-2 mt-1"
+          >
+            <option value="Increase Balance">Increase Balance</option>
+            <option value="Reduce Balance">Reduce Balance</option>
+          </select>
+        </div>
+      ) : (
+       
+          <div className="w-1/2">
+          <label className="text-sm font-medium">To</label>
+          <select
+            name="to"
+            value={formData.to}
+            onChange={handleChange}
+            className="w-full border rounded-md px-3 py-2 mt-1"
+            disabled={transferType === "Bank to Cash Transfer"}
+          >
+            {transferType === "Bank to Cash Transfer" ? (
+              <option value="Cash">Cash</option>
+            ) : (
+              <>
+                <option value="">Select</option>
+                {banks
+                  .filter((bank) => bank.bankName !== formData.from) // Prevent selecting same bank
+                  .map((bank) => (
+                    <option key={bank.accountNumber} value={bank.bankName}>
+                      {bank.bankName} - {bank.accountNumber}
+                    </option>
+                  ))}
+              </>
+            )}
+          </select>
+        </div>
+      )}
+    
+    
+      
+      
+      </div>
 
-</>
-  )
-}
+      {/* Amount & Date */}
+      <div className="flex gap-4 mt-4">
+        <div className="w-1/2">
+          <label className="text-sm font-medium">Amount</label>
+          <input
+            type="number"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className="w-full border rounded-md px-3 py-2 mt-1"
+            placeholder="Enter amount"
+          />
+        </div>
+
+        <div className="w-1/2">
+          <label className="text-sm font-medium">Adjustment Date</label>
+          <input
+            type="date"
+            name="adjustmentDate"
+            value={formData.adjustmentDate}
+            onChange={handleChange}
+            className="w-full border rounded-md px-3 py-2 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="mt-4">
+        <label className="text-sm font-medium">Description</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className="w-full border rounded-md px-3 py-2 mt-1"
+          placeholder="Add description"
+        ></textarea>
+      </div>
+
+      {/* Attachments */}
+      <div className="mt-4 flex items-center gap-2">
+        <button className="border p-2 rounded-md flex items-center gap-1 text-sm">
+          <span>📷</span> Add Attachment
+        </button>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 mt-6">
+        <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-md">
+          Cancel
+        </button>
+        <button onClick={handleSubmit} className="px-4 py-2 bg-blue-500 text-white rounded-md">
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
 
 
 
@@ -250,31 +519,32 @@ const AddBankModal = ({isEdit , setIsAddBankModalOpen , formData , handleAddBank
 const Banking = () => {
   const [banks, setBanks] = useState([]);
   const [selectedBank, setSelectedBank] = useState(null);
+
+  console.log(selectedBank , "selectedBank")
   const [phone, setPhone] = useState(null);
   const [error, setError] = useState(null);
-  const [isEdit , setIsEdit] = useState(false)
-    const [menuOpen, setMenuOpen] = useState(null);
-    const toggleMenu = (index) => {
-      setMenuOpen(menuOpen === index ? null : index);
+  const [isEdit, setIsEdit] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(null);
+  const [transactionAll , setTransactionAll] = useState([])
+  const toggleMenu = (index) => {
+    setMenuOpen(menuOpen === index ? null : index);
+  };
+
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(null);
+      }
     };
 
-    const menuRef = useRef(null);
-
-       
-  
-    // Close menu when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (menuRef.current && !menuRef.current.contains(event.target)) {
-          setMenuOpen(null);
-        }
-      };
-  
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   const [transactions] = useState([
     {
       type: "Purchase",
@@ -336,33 +606,56 @@ const Banking = () => {
       const existingDoc = await db.get(phone);
 
       setBanks(existingDoc?.banks || []);
+      // setTransactionAll(existingDoc || [])
     } catch (err) {
       setError(err.message);
     }
   };
 
+  const getTransactionsForBank = async(bankId) => {
+
+    console.log(bankId , "bank1")
+    const userDoc = await db.get(phone);
+
+    let txn =  userDoc.transactions.filter(
+      (txn) => txn.fromBankId === bankId || txn.toBankId === bankId
+    );
+
+    setTransactionAll(txn)
+  };
+
+
+
+
+  useEffect(()=>{
+           if(selectedBank?._id)
+           {
+            getTransactionsForBank(selectedBank?._id)
+           }
+  } ,[selectedBank])
+
+
+  console.log(transactionAll , "transaction")
   useEffect(() => {
     fetchAllBanks();
   }, [phone]);
 
   useEffect(() => {
     if (banks?.length > 0 && !selectedBank) {
-      console.log(banks , "b")
+      console.log(banks, "b");
       setSelectedBank(banks[0]);
     }
   }, [banks, selectedBank]);
 
- 
-
   // const handleInputChange = (e) => {
   //   const { name, value, type, checked } = e.target;
-  
+
   //   setFormData((prevData) => ({
   //     ...prevData,
   //     [name]: type === "checkbox" ? checked : value,
   //   }));
   // };
-  
+
   const handleDateChange = (e) => {
     const { value } = e.target;
     // Allow only numbers and forward slashes
@@ -378,8 +671,6 @@ const Banking = () => {
     setFormData((prev) => ({ ...prev, asOfDate: finalValue }));
   };
 
-
-
   const handleAddBank = async () => {
     try {
       if (!phone) {
@@ -392,7 +683,7 @@ const Banking = () => {
         existingDoc = await db.get(phone);
       } catch (error) {
         if (error.name === "not_found") {
-          existingDoc = { _id: phone, banks: [] }; // Create new doc if not found
+          existingDoc = { _id: phone, banks: [], transactions: [] }; // ✅ Initialize transactions
         } else {
           throw error;
         }
@@ -401,7 +692,9 @@ const Banking = () => {
       const { bankName, openingBalance, asOfDate } = formData;
   
       if (!bankName || !openingBalance || !asOfDate) {
-        toast.error("All fields are required.", { style: { background: "#f56565", color: "#fff" } });
+        toast.error("All fields are required.", {
+          style: { background: "#f56565", color: "#fff" },
+        });
         return;
       }
   
@@ -409,11 +702,14 @@ const Banking = () => {
       const formattedDate = new Date(`${year}-${month}-${day}`);
   
       if (isNaN(formattedDate.getTime())) {
-        toast.error("Invalid date format.", { style: { background: "#f56565", color: "#fff" } });
+        toast.error("Invalid date format.", {
+          style: { background: "#f56565", color: "#fff" },
+        });
         return;
       }
   
       const existingBanks = existingDoc.banks || [];
+      const transactions = existingDoc.transactions || []; // ✅ Ensure transactions exist
   
       if (isEdit) {
         if (menuOpen === null || menuOpen < 0 || menuOpen >= existingBanks.length) {
@@ -421,53 +717,80 @@ const Banking = () => {
           return;
         }
   
-        existingBanks[menuOpen] = {  // ✅ Update existing bank
+        existingBanks[menuOpen] = {
           ...existingBanks[menuOpen],
           bankName,
           openingBalance,
           asOfDate: formattedDate.toISOString().split("T")[0],
           printUPI: formData.printUPI,
           printBankDetails: formData.printBankDetails,
-          accountNumber: formData.accountNumber || '',
-          accountHolder: formData.accountHolder || '',
-          ifscCode: formData.ifscCode || '',
-          upiId: formData.upiId || '',
+          accountNumber: formData.accountNumber || "",
+          accountHolder: formData.accountHolder || "",
+          ifscCode: formData.ifscCode || "",
+          upiId: formData.upiId || "",
         };
   
-        toast.success("Bank updated successfully!", { style: { background: "#48bb78", color: "#fff" } });
+        toast.success("Bank updated successfully!", {
+          style: { background: "#48bb78", color: "#fff" },
+        });
       } else {
         const existingBank = existingBanks.find((bank) => bank.bankName === bankName);
         if (existingBank) {
-          toast.error("A bank with this name already exists.", { style: { background: "#f56565", color: "#fff" } });
+          toast.error("A bank with this name already exists.", {
+            style: { background: "#f56565", color: "#fff" },
+          });
           return;
         }
   
-        existingBanks.push({  // ✅ Add new bank
+        const newBank = {
+          _id: `${phone}-${bankName}`,
           bankName,
           openingBalance,
+          balance: openingBalance,
           asOfDate: formattedDate.toISOString().split("T")[0],
           printUPI: formData.printUPI,
           printBankDetails: formData.printBankDetails,
-          accountNumber: formData.accountNumber || '',
-          accountHolder: formData.accountHolder || '',
-          ifscCode: formData.ifscCode || '',
-          upiId: formData.upiId || '',
-        });
+          accountNumber: formData.accountNumber || "",
+          accountHolder: formData.accountHolder || "",
+          ifscCode: formData.ifscCode || "",
+          upiId: formData.upiId || "",
+        };
   
-        toast.success("Bank added successfully!", { style: { background: "#48bb78", color: "#fff" } });
+        existingBanks.push(newBank);
+  
+        // ✅ Create an opening balance transaction
+        const openingTransaction = {
+          txnId: `${phone}-${bankName}-${Date.now()}`,
+          type: "redit", // ✅ Opening balance is a credit
+          name :"Opening Balance",
+          amount: Number(openingBalance),
+          fromBankId: null, // ✅ No source, as it's an initial deposit
+          toBankId: newBank._id, // ✅ Deposited into the newly created bank
+          description: `Opening balance for ${bankName}`,
+          date: formattedDate.toISOString().split("T")[0],
+        };
+  
+        transactions.push(openingTransaction);
+  
+        toast.success("Bank added successfully!", {
+          style: { background: "#48bb78", color: "#fff" },
+        });
       }
   
-      await db.put({ ...existingDoc, banks: existingBanks });
+      await db.put({ ...existingDoc, banks: existingBanks, transactions });
   
       resetForm();
-      setIsAddBankModalOpen(false)
-      fetchAllBanks();
+      setIsAddBankModalOpen(false);
     } catch (error) {
       console.error("Failed to add/update bank:", error);
-      toast.error(`Failed to add/update bank: ${error.message}`, { style: { background: "#f56565", color: "#fff" } });
+      toast.error(`Failed to add/update bank: ${error.message}`, {
+        style: { background: "#f56565", color: "#fff" },
+      });
     }
   };
   
+  
+
   // 🔹 Reset form and edit state
   const resetForm = () => {
     setIsEdit(false);
@@ -478,20 +801,18 @@ const Banking = () => {
       asOfDate: "",
       printUPI: false,
       printBankDetails: false,
-      accountNumber: '',
-      accountHolder: '',
-      ifscCode: '',
-      upiId: '',
+      accountNumber: "",
+      accountHolder: "",
+      ifscCode: "",
+      upiId: "",
     });
   };
-  
-  
-  const handleAddClick = ()=>{
-    setIsAddBankModalOpen(true)
-    setIsEdit(false)
-    resetForm()
-  }
 
+  const handleAddClick = () => {
+    setIsAddBankModalOpen(true);
+    setIsEdit(false);
+    resetForm();
+  };
 
   const handleBankSelect = (bank) => {
     setSelectedBank(bank);
@@ -647,9 +968,10 @@ const Banking = () => {
     </div>
   );
 
-
   // 21/01/2025
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedTransfer, setSelectedTransfer] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const dropdownOptions = [
     {
@@ -671,6 +993,9 @@ const Banking = () => {
   ];
 
   const handleOptionClick = (option) => {
+    // setSelectedTransfer(value);
+    setSelectedTransfer(option.label);
+    setIsModalOpen(true);
     setIsDropdownOpen(false);
     // Handle the selected option here
     console.log("Selected option:", option);
@@ -680,7 +1005,15 @@ const Banking = () => {
     return (
       <>
         <EmptyState />
-        {isAddBankModalOpen && <AddBankModal setIsAddBankModalOpen={setIsAddBankModalOpen} formData={formData} setFormData={setFormData} isEdit={isEdit} handleAddBank={handleAddBank} />}
+        {isAddBankModalOpen && (
+          <AddBankModal
+            setIsAddBankModalOpen={setIsAddBankModalOpen}
+            formData={formData}
+            setFormData={setFormData}
+            isEdit={isEdit}
+            handleAddBank={handleAddBank}
+          />
+        )}
       </>
     );
   }
@@ -742,81 +1075,89 @@ const Banking = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-green-400">
-                  ₹ {Number(bank.openingBalance)?.toFixed(2)}
+                  ₹ {Number(bank.balance)?.toFixed(2)}
                 </span>
-                  <span className="text-sm border-t relative">
-                                        <button
-                                          className="p-2 hover:bg-gray-200 rounded-full"
-                                          onClick={() => toggleMenu(index)}
-                                        >
-                                          <MoreVertical className="w-5 h-5" />
-                                        </button>
-                                       
-                {/* <MoreVertical className="h-4 w-4 text-gray-500"   onClick={() => toggleMenu(index)} /> */}
+                <span className="text-sm border-t relative">
+                  <button
+                    className="p-2 hover:bg-gray-200 rounded-full"
+                    onClick={() => toggleMenu(index)}
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+
+                  {/* <MoreVertical className="h-4 w-4 text-gray-500"   onClick={() => toggleMenu(index)} /> */}
                   {menuOpen === index && (
-                                          <div ref={menuRef} className="absolute right-0 mt-2 w-32 bg-white shadow-lg rounded-lg z-10">
-                                            <button
-                                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                              onClick={() => {
-                                                setIsEdit(true);
-                                                setIsAddBankModalOpen(true)
-                                                setFormData(bank)
-                                                // setCurrentParty(party);
-                                                // setMenuOpen(false);
-                                              }}
-                                            >
-                                              View/Edit
-                                            </button>
-                                            <button
-  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-  onClick={async () => {
-    try {
-      const existingDoc = await db.get(phone);
+                    <div
+                      ref={menuRef}
+                      className="absolute right-0 mt-2 w-32 bg-white shadow-lg rounded-lg z-10"
+                    >
+                      <button
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        onClick={() => {
+                          setIsEdit(true);
+                          setIsAddBankModalOpen(true);
+                          setFormData(bank);
+                          // setCurrentParty(party);
+                          // setMenuOpen(false);
+                        }}
+                      >
+                        View/Edit
+                      </button>
+                      <button
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        onClick={async () => {
+                          try {
+                            const existingDoc = await db.get(phone);
 
-      if (!existingDoc.banks || existingDoc.banks.length === 0) {
-        throw new Error("No banks found");
-      }
+                            if (
+                              !existingDoc.banks ||
+                              existingDoc.banks.length === 0
+                            ) {
+                              throw new Error("No banks found");
+                            }
 
-      // Find the index of the bank to delete
-      const bankIndex = existingDoc.banks.findIndex((b) => b.bankName === bank.bankName);
-      if (bankIndex === -1) {
-        throw new Error("Bank not found");
-      }
+                            // Find the index of the bank to delete
+                            const bankIndex = existingDoc.banks.findIndex(
+                              (b) => b.bankName === bank.bankName
+                            );
+                            if (bankIndex === -1) {
+                              throw new Error("Bank not found");
+                            }
 
-      // Remove the bank from the list
-      existingDoc.banks.splice(bankIndex, 1);
+                            // Remove the bank from the list
+                            existingDoc.banks.splice(bankIndex, 1);
 
-      // Update the database
-      await db.put(existingDoc);
+                            // Update the database
+                            await db.put(existingDoc);
 
-      // Refresh the list
-      fetchAllBanks();
+                            // Refresh the list
+                            fetchAllBanks();
 
-      toast.success("Bank deleted successfully!", {
-        duration: 4000,
-        position: "top-center",
-        style: { background: "#48bb78", color: "#fff" },
-      });
+                            toast.success("Bank deleted successfully!", {
+                              duration: 4000,
+                              position: "top-center",
+                              style: { background: "#48bb78", color: "#fff" },
+                            });
 
-      setMenuOpen(null);
-    } catch (error) {
-      toast.error(
-        error?.message || "Failed to delete bank. Please try again later.",
-        {
-          duration: 4000,
-          position: "top-center",
-          style: { background: "#f56565", color: "#fff" },
-        }
-      );
-    }
-  }}
->
-  Delete
-</button>
-
-                                          </div>
-                                        )}
-                                         </span>
+                            setMenuOpen(null);
+                          } catch (error) {
+                            toast.error(
+                              error?.message ||
+                                "Failed to delete bank. Please try again later.",
+                              {
+                                duration: 4000,
+                                position: "top-center",
+                                style: { background: "#f56565", color: "#fff" },
+                              }
+                            );
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </span>
               </div>
             </div>
           ))}
@@ -908,27 +1249,27 @@ const Banking = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((transaction, index) => (
+              {transactionAll.map((transaction, index) => (
                 <tr key={index} className="border-t">
                   <td className="py-3">
                     <div className="flex items-center gap-2">
-                      {transaction.type === "Purchase" && (
+                      {/* {transaction.type === "Purchase" && (
                         <div className="w-2 h-2 rounded-full bg-red-500"></div>
                       )}
                       {transaction.type === "Sale" && (
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      )}
+                      )} */}
                       <span className="text-sm">{transaction.type}</span>
                     </div>
                   </td>
                   <td className="py-3 text-sm">{transaction.name}</td>
                   <td className="py-3 text-sm">{transaction.date}</td>
                   <td className="py-3 text-right text-sm">
-                    ₹ {transaction.amount.toFixed(2)}
+                    {/* ₹ {transaction.amount.toFixed(2)} */}
                   </td>
-                  <td className="py-3 text-right">
+                  {/* <td className="py-3 text-right">
                     <MoreVertical className="h-4 w-4 text-gray-500 inline-block" />
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
@@ -936,7 +1277,28 @@ const Banking = () => {
         </div>
       </div>
 
-      {isAddBankModalOpen && <AddBankModal setIsAddBankModalOpen={setIsAddBankModalOpen} formData={formData} setFormData={setFormData} isEdit={isEdit} handleAddBank={handleAddBank} />}
+      {isAddBankModalOpen && (
+        <AddBankModal
+          setIsAddBankModalOpen={setIsAddBankModalOpen}
+          formData={formData}
+          setFormData={setFormData}
+          isEdit={isEdit}
+          handleAddBank={handleAddBank}
+        />
+      )}
+
+        {/* Modal */}
+        {/* Modal */}
+        {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <TransferPopupContent
+            transferType={selectedTransfer}
+            onClose={() => setIsModalOpen(false)}
+            banks={banks}
+            phone={phone}
+          />
+        </div>
+      )}
     </div>
   );
 };

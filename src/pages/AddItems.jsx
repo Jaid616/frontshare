@@ -444,6 +444,8 @@ const AddItems = ({
       },
       conversionRate,
     };
+
+    // console.log(savedData , "saveData")
     handleAddItems(savedData);
     handleModelClose();
   };
