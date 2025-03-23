@@ -897,7 +897,6 @@ export default function AddSales() {
     const itemIndex = updatedTabs[tabIndex].form.items.findIndex(
       (item) => item.id === rowId
     );
-
     if (itemIndex !== -1) {
       let discountAmount = 0;
       if (currentItem.saleDiscountType === "Percentage") {
@@ -1222,13 +1221,14 @@ export default function AddSales() {
       if (!existingDoc) {
         throw new Error("Customer data not found");
       }
-
+   
       const updatedItems = existingDoc.items.map((existingItem) => {
         let matchedItem = updatedTabs
           .flatMap((tab) => tab.form.items) // Get all items from all tabs
           .find((item) => item.itemId === existingItem.itemCode); // Match itemId with itemCode
-
+         console.log(existingItem , "exitsItem")
         if (matchedItem) {
+       
           let quantityChangePrimary = Number(matchedItem.quantity.primary) || 0;
           let quantityChangeSecondary =
             Number(matchedItem.quantity.secondary) || 0;
@@ -1237,32 +1237,41 @@ export default function AddSales() {
             Number(existingItem.openingPrimaryQuantity) || 0;
           let openingSecondaryQuantity =
             Number(existingItem.openingSecondaryQuantity) || 0;
+          let conversionRate = Number(existingItem?.conversionRate ||1)
 
-          if (currentPage === "addsales") {
-            return {
-              ...existingItem,
-              openingPrimaryQuantity: (
-                openingPrimaryQuantity - quantityChangePrimary
-              ).toString(),
-              openingSecondaryQuantity: (
-                openingSecondaryQuantity - quantityChangeSecondary
-              ).toString(),
-            };
-          } else if (currentPage === "addpurchase") {
-            return {
-              ...existingItem,
-              openingPrimaryQuantity: (
-                openingPrimaryQuantity + quantityChangePrimary
-              ).toString(),
-              openingSecondaryQuantity: (
-                openingSecondaryQuantity + quantityChangeSecondary
-              ).toString(),
-            };
-          }
+           
+
+            if (currentPage === "addsales") {
+              let calculateQty = existingItem?.qty - ((quantityChangePrimary * conversionRate) + quantityChangeSecondary )             
+              let remainPrimary = Math.floor(calculateQty / conversionRate);  
+              let remainSecondary = calculateQty % conversionRate ;  
+            
+              return {
+                ...existingItem,
+                openingPrimaryQuantity: remainPrimary.toString(),
+                openingSecondaryQuantity: remainSecondary.toString(),
+                qty : calculateQty ,
+              };
+            } else if (currentPage === "addpurchase") {
+              let calculateQty = existingItem?.qty + ((quantityChangePrimary * conversionRate) + quantityChangeSecondary )             
+              let remainPrimary = Math.floor(calculateQty / conversionRate);  
+              let remainSecondary = calculateQty % conversionRate ;
+                
+            
+              return {
+                ...existingItem,
+                openingPrimaryQuantity: remainPrimary.toString(),
+                openingSecondaryQuantity: remainSecondary.toString(),
+                qty : calculateQty ,
+              };
+            }
+            
         }
 
         return existingItem;
       });
+
+
 
       // Create a variable to store the matched party for invoice generation
       let matchedParty = null;

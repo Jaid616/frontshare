@@ -1265,7 +1265,7 @@ const Banking = () => {
                   <td className="py-3 text-sm">{transaction.name}</td>
                   <td className="py-3 text-sm">{transaction.date}</td>
                   <td className="py-3 text-right text-sm">
-                    {/* ₹ {transaction.amount.toFixed(2)} */}
+                    ₹ {transaction.amount}
                   </td>
                   {/* <td className="py-3 text-right">
                     <MoreVertical className="h-4 w-4 text-gray-500 inline-block" />

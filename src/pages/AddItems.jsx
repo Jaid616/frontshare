@@ -19,6 +19,8 @@ const AddItems = ({
   currentItem,
 }) => {
   const [items, setItems] = useState([]);
+
+  console.log(currentItem , "currentItem")
   const [isUnique, setIsUnique] = useState(true);
   const [tab, setTab] = useState(0);
   const navigate = useNavigate();
@@ -29,6 +31,7 @@ const AddItems = ({
   const [primaryUnit, setPrimaryUnit] = useState("");
   const [secondaryUnit, setSecondaryUnit] = useState("");
   const [categories, setCategories] = useState([]);
+  const [conversionRate, setConversionRate] = useState("1");
   const [updatedPrimaryUnits, setUpdatedPrimaryUnits] = useState([
     { name: "BAGS" },
     { name: "BOTTLES" },
@@ -223,6 +226,9 @@ const AddItems = ({
   useEffect(() => {
     if (isEdit && currentItem) {
       setFormData(currentItem);
+      setConversionRate(currentItem?.conversionRate)
+      setPrimaryUnit(currentItem.quantity.primary);
+      setSecondaryUnit(currentItem.quantity.secondary);
     } else {
       setFormData({
         itemName: "",
@@ -433,7 +439,7 @@ const AddItems = ({
       typeof value === "string" ? value.split(",") : value
     );
   };
-  const [conversionRate, setConversionRate] = useState("0");
+ 
   const handleSave = () => {
     const savedData = {
       ...formData,
@@ -443,6 +449,7 @@ const AddItems = ({
         secondary: secondaryUnit,
       },
       conversionRate,
+      qty : ((Number(formData?.openingPrimaryQuantity) || 0 )*Number(conversionRate)) + ( Number(formData.openingSecondaryQuantity) || 0 )
     };
 
     // console.log(savedData , "saveData")
