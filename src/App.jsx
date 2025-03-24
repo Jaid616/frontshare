@@ -154,6 +154,9 @@ const App = () => {
     fetchPhone();
   }, []);
 
+   
+
+
   useEffect(()=>{
        disableNumberScroll()
   },[])

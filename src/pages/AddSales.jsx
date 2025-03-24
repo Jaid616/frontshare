@@ -1470,7 +1470,7 @@ export default function AddSales() {
           if (item.id === itemId) {
             let updatedItem;
             let extractedTaxPercentage = null;
-
+  
             if (subfield) {
               // Handle tax percentage extraction from dropdown
               if (
@@ -1478,18 +1478,14 @@ export default function AddSales() {
                 subfield === "percentage" &&
                 typeof value === "string"
               ) {
-                const match = value.match(/(\d+(\.\d+)?)%/); // Extracts the numeric part before %
-                if (match) {
-                  extractedTaxPercentage = parseFloat(match[1]); // Convert to number
-                } else {
-                  extractedTaxPercentage = value === "" ? "" : 0; // Empty string if nothing selected
-                }
-
+                const match = value.match(/(\d+(\.\d+)?)%/); // Extract numeric part before %
+                extractedTaxPercentage = match ? parseFloat(match[1]) : value === "" ? "" : 0;
+  
                 updatedItem = {
                   ...item,
                   [field]: {
-                    ...item[field],
-                    [subfield]: value, // Keep the original value (with tax name)
+                    ...(typeof item[field] === "object" ? item[field] : {}), // Ensure it's an object
+                    [subfield]: value, // Keep original value (with tax name)
                     rate: extractedTaxPercentage, // Store numeric rate separately
                   },
                 };
@@ -1498,7 +1494,7 @@ export default function AddSales() {
                 updatedItem = {
                   ...item,
                   [field]: {
-                    ...item[field],
+                    ...(typeof item[field] === "object" ? item[field] : {}), // Ensure it's an object
                     [subfield]: value,
                   },
                 };
@@ -1507,7 +1503,11 @@ export default function AddSales() {
               // Handle regular fields
               updatedItem = { ...item, [field]: value };
             }
-
+  
+            // Ensure discount & tax are objects before assignment
+            updatedItem.discount = typeof updatedItem.discount === "object" ? updatedItem.discount : {};
+            updatedItem.tax = typeof updatedItem.tax === "object" ? updatedItem.tax : {};
+  
             // Specific handling for different field changes
             if (
               field === "quantity" ||
@@ -1517,27 +1517,35 @@ export default function AddSales() {
             ) {
               // Recalculate totals for quantity, price, and unit changes
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals.finalAmount;
-              updatedItem.discount.amount = totals.discountAmount;
-              updatedItem.tax.amount = totals.taxAmount;
+              if (totals) {
+                updatedItem.amount = totals.finalAmount ?? 0;
+                updatedItem.discount.amount = totals.discountAmount ?? 0;
+                updatedItem.tax.amount = totals.taxAmount ?? 0;
+              } else {
+                console.error("calculateItemTotals returned undefined:", updatedItem);
+              }
             } else if (field === "discount" && subfield === "percentage") {
               // For discount percentage changes, recalculate all totals
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals.finalAmount;
-              updatedItem.discount.amount = totals.discountAmount;
-              updatedItem.tax.amount = totals.taxAmount;
+              if (totals) {
+                updatedItem.amount = totals.finalAmount ?? 0;
+                updatedItem.discount.amount = totals.discountAmount ?? 0;
+                updatedItem.tax.amount = totals.taxAmount ?? 0;
+              }
             } else if (field === "tax" && subfield === "percentage") {
               // For tax percentage changes, recalculate totals
               const totals = calculateItemTotals(updatedItem, conversions);
-              updatedItem.amount = totals.finalAmount;
-              updatedItem.tax.amount = totals.taxAmount;
+              if (totals) {
+                updatedItem.amount = totals.finalAmount ?? 0;
+                updatedItem.tax.amount = totals.taxAmount ?? 0;
+              }
             }
-
+  
             return updatedItem;
           }
           return item;
         });
-
+  
         // Calculate bill totals
         const billTotals = calculateBillTotals(newItems, conversions);
         const finalTotals = applyBillLevelDiscountAndTax(
@@ -1545,12 +1553,12 @@ export default function AddSales() {
           tab.form.discount,
           tab.form.tax
         );
-
+  
         // Apply round off if enabled
         const roundedTotal = tab.form.roundOff
           ? roundOff(finalTotals.grandTotal)
           : finalTotals.grandTotal;
-
+  
         return {
           ...tab,
           form: {
@@ -1562,6 +1570,7 @@ export default function AddSales() {
       })
     );
   };
+  
 
   const handleNumericInputChange = (itemId, field, value, subfield = null) => {
     // Allow empty string or valid numbers

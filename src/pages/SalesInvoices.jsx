@@ -10,6 +10,8 @@ const SalesInvoices = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filteredBills, setFilteredBills] = useState([]);
+
+  console.log(filteredBills , "filterBills")
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [bills, setBills] = useState([]);
   const [phone, setPhone] = useState(null);
@@ -63,101 +65,103 @@ const SalesInvoices = () => {
       setFilteredBills([]);
       return;
     }
-
-    // Filter for sales bills only
+  
     let filtered = bills.filter((bill) => bill.billType === "addsales");
-
+  
+    // Function to parse dates safely
+    const parseDate = (dateStr) => {
+      console.log(dateStr , "dateStr")
+      if (!dateStr) return null; // Handle missing values
+      const parsedDate = new Date(dateStr);
+      if (isNaN(parsedDate.getTime())) {
+        console.error(`Invalid Date: ${dateStr}`);
+        return null;
+      }
+      return parsedDate;
+    };
+  
     if (startDate && endDate) {
-      filtered = filtered.filter((bill) => {
-        const billDate = new Date(bill.invoiceDate);
-        return billDate >= new Date(startDate) && billDate <= new Date(endDate);
-      });
+      const parsedStartDate = parseDate(startDate);
+      const parsedEndDate = parseDate(endDate);
+  
+      if (parsedStartDate && parsedEndDate) {
+        filtered = filtered.filter((bill) => {
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= parsedStartDate && billDate <= parsedEndDate;
+        });
+      }
     }
-
+  
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
+  
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDayOfMonth = new Date(
-      today.getFullYear(),
-      today.getMonth() + 1,
-      0
-    );
-    const firstDayOfLastMonth = new Date(
-      today.getFullYear(),
-      today.getMonth() - 1,
-      1
-    );
-    const lastDayOfLastMonth = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      0
-    );
-    const firstDayOfQuarter = new Date(
-      today.getFullYear(),
-      Math.floor(today.getMonth() / 3) * 3,
-      1
-    );
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+  
+    const firstDayOfQuarter = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
     const lastDayOfQuarter = new Date(firstDayOfQuarter);
     lastDayOfQuarter.setMonth(firstDayOfQuarter.getMonth() + 3, 0);
+  
     const firstDayOfLastQuarter = new Date(firstDayOfQuarter);
     firstDayOfLastQuarter.setMonth(firstDayOfQuarter.getMonth() - 3);
     const lastDayOfLastQuarter = new Date(firstDayOfQuarter);
     lastDayOfLastQuarter.setDate(0);
+  
     const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-
+  
     switch (timePeriod) {
       case "Today":
-        filtered = filtered.filter(
-          (bill) =>
-            new Date(bill.invoiceDate).toDateString() === today.toDateString()
-        );
+        filtered = filtered.filter((bill) => {
+          const billDate = parseDate(bill.invoiceDate);
+         
+          return billDate && billDate.toDateString() === today.toDateString();
+        });
         break;
       case "This Month":
         filtered = filtered.filter((bill) => {
-          const billDate = new Date(bill.invoiceDate);
-          return billDate >= firstDayOfMonth && billDate <= lastDayOfMonth;
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= firstDayOfMonth && billDate <= lastDayOfMonth;
         });
         break;
       case "Last Month":
         filtered = filtered.filter((bill) => {
-          const billDate = new Date(bill.invoiceDate);
-          return (
-            billDate >= firstDayOfLastMonth && billDate <= lastDayOfLastMonth
-          );
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= firstDayOfLastMonth && billDate <= lastDayOfLastMonth;
         });
         break;
       case "This Quarter":
         filtered = filtered.filter((bill) => {
-          const billDate = new Date(bill.invoiceDate);
-          return billDate >= firstDayOfQuarter && billDate <= lastDayOfQuarter;
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= firstDayOfQuarter && billDate <= lastDayOfQuarter;
         });
         break;
       case "Last Quarter":
         filtered = filtered.filter((bill) => {
-          const billDate = new Date(bill.invoiceDate);
-          return (
-            billDate >= firstDayOfLastQuarter &&
-            billDate <= lastDayOfLastQuarter
-          );
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= firstDayOfLastQuarter && billDate <= lastDayOfLastQuarter;
         });
         break;
       case "This Year":
         filtered = filtered.filter((bill) => {
-          const billDate = new Date(bill.invoiceDate);
-          return billDate >= firstDayOfYear;
+          const billDate = parseDate(bill.form?.invoiceDate);
+          return billDate && billDate >= firstDayOfYear;
         });
         break;
       case "Custom":
-        // Already handled by the date range filter above
+        // Already handled above
         break;
       default:
         // "All Sale Invoices" - no additional filtering needed
         break;
     }
-
+  
     setFilteredBills(filtered);
   };
+  
+  
+  
 
   const calculateSummary = () => {
     return filteredBills.reduce(
@@ -255,10 +259,10 @@ const SalesInvoices = () => {
           className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={timePeriod !== "Custom"}
         />
-        <select className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        {/* <select className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="Firm1">Firm1</option>
           <option value="Firm2">Firm2</option>
-        </select>
+        </select> */}
       </div>
 
       {/* Summary Cards */}
@@ -292,7 +296,7 @@ const SalesInvoices = () => {
       {/* Transactions Table with Fixed Height and Scrollbars */}
       <div className="bg-white rounded-lg shadow-md p-4 h-[62vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">Transactions</h3>
+          <h3 className="text-lg font-bold">Transactions Sales</h3>
           <button
             onClick={() =>
               navigate("/add-sales", { state: { page: "addsales" } })
